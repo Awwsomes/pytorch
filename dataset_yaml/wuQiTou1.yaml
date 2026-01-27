@@ -1,0 +1,8 @@
+path: D:\\A_myData\\dataset\\wuQiTou2
+
+train: train\\images
+val: val\\images
+test: test\\images
+
+names:
+  0: s
