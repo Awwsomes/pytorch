@@ -63,10 +63,14 @@ if __name__ == "__main__":
     #     output_dir = os.path.join(output_root_path,dir)
     #     generate_labels_through_dirname(dir_path,output_dir)
 
-    input_path = r"D:\A_myData\dataset\juanZhou_gazebo2\images"
-    output_path = r"D:\A_myData\dataset\juanZhou_gazebo2\labels"
+    root_path = "/home/awwsome/datasets/juanZhou_gazebo10/"
 
-    if not os.path.exists(output_path):
-        os.mkdir(output_path)
+    dir_list = os.listdir(root_path)
 
-    generate_labels_through_filename(input_path,output_path)
+    for dir_name in dir_list:
+        input_path = os.path.join(root_path,dir_name)
+        output_path = r"/home/awwsome/datasets/juanZhou_gazebo11/labels"
+
+        os.makedirs(output_path,exist_ok=True)
+
+        generate_labels_through_dirname(input_path,output_path)
