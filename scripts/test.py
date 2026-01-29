@@ -33,8 +33,8 @@
 #         new_path = os.path.join(input_path,img)
 #         shutil.copy(old_path,new_path)
 
-import os
-import shutil
+# import os
+# import shutil
 
 # input_path = r"D:\A_myData\dataset\juanZhou_gazebo6-cls"
 # list_dir = os.listdir(input_path)
@@ -48,16 +48,36 @@ import shutil
 # for root,dirs,files in os.walk("D:\A_myData\dataset\juanZhou_gazebo5-cls"):
 #     print(f"{root}\n{dirs}\n{files}\n------------------")
 
-def copy_dirs_with_ori_name(root_dir,output_dir:str):
-    if not os.path.exists(root_dir):
-        print("根目录不存在！")
-        return -1
-    for root,dirs,_ in os.walk(root_dir):
-        if len(dirs) == 0:
-            rela_path = os.path.relpath(root,root_dir)
-            new_path = os.path.join(output_dir,rela_path)
-            os.makedirs(new_path,exist_ok=True)
-    print("目录拷贝完成.")
-    return 0
+# def copy_dirs_with_ori_name(root_dir,output_dir:str):
+#     if not os.path.exists(root_dir):
+#         print("根目录不存在！")
+#         return -1
+#     for root,dirs,_ in os.walk(root_dir):
+#         if len(dirs) == 0:
+#             rela_path = os.path.relpath(root,root_dir)
+#             new_path = os.path.join(output_dir,rela_path)
+#             os.makedirs(new_path,exist_ok=True)
+#     print("目录拷贝完成.")
+#     return 0
+#
+# copy_dirs_with_ori_name("D:\A_myData\dataset\juanZhou_gazebo5-cls","D:\A_myData\dataset\juanZhou_gazebo6")
 
-copy_dirs_with_ori_name("D:\A_myData\dataset\juanZhou_gazebo5-cls","D:\A_myData\dataset\juanZhou_gazebo6")
+import os
+import shutil
+
+label_path = r"D:\A_myData\dataset\test_map50_cla_\labels"
+output_root_path = r"D:\A_myData\dataset\test_map50_cla_\labels_new"
+os.makedirs(output_root_path,exist_ok=True)
+list_label = os.listdir(label_path)
+for label in list_label:
+    label_name,label_ext = os.path.splitext(label)
+    # print(label_name,label_ext)
+    label_idx = label_name.split("_")[1]
+    # print(label_idx)
+    new_label = f"images_{label_idx}{label_ext}"
+    # print(new_label)
+    origin_path = os.path.join(label_path,label)
+    # print(origin_path)
+    output_path = os.path.join(output_root_path,new_label)
+    # print(output_path)
+    shutil.copy(origin_path,output_path)
