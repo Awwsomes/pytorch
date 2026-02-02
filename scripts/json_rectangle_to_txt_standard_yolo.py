@@ -54,6 +54,12 @@ def json_rectangle_to_txt_standard_yolo(input_dir:str,output_dir:str,list_labels
                 x_center = points[0][0] + width / 2
                 y_center = points[0][1] + height / 2
 
+                # 归一化
+                width = width / 1920
+                height = height / 1080
+                x_center = x_center / 1920
+                y_center = y_center / 1080
+
                 # 判断json中的类别是否存在于输入的类别列表
                 label = shape["label"]
                 if label in list_labels:
@@ -66,6 +72,6 @@ def json_rectangle_to_txt_standard_yolo(input_dir:str,output_dir:str,list_labels
             print(f"Write {output_name}.")
 
 if __name__ == "__main__":
-    input_path = r"D:\A_myData\Pytorch\scripts\test_file\input"
-    output_path = r"D:\A_myData\Pytorch\scripts\test_file\output"
+    input_path = r"D:\A_myData\dataset\corner3\jsons"
+    output_path = r"D:\A_myData\dataset\corner3\labels"
     json_rectangle_to_txt_standard_yolo(input_path,output_path,["corner"])
