@@ -49,8 +49,8 @@ def process_file(input_path, output_dir):
 
 if __name__ == "__main__":
     # 输入文件路径
-    input_file = r"D:\A_myData\dataset\juanZhou13\label"  # 这里替换成你的源文件路径
-    output_folder = r"D:\A_myData\dataset\juanZhou13\label_standard"  # 输出文件夹
+    input_file = r"D:\A_myData\dataset\corner1\labels"  # 这里替换成你的源文件路径
+    output_folder = r"D:\A_myData\dataset\corner1\labels_standard"  # 输出文件夹
 
     list_txt = os.listdir(input_file)
     for txt in list_txt:

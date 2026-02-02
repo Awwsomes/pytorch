@@ -75,7 +75,7 @@ def split_data(file_path, new_file_path, train_rate, val_rate, test_rate):
         shutil.copy(old_xmlpath, new_xmlpath)
 
 if __name__ == '__main__':
-    file_path = r"D:\A_myData\dataset\corner1\images_no_blank" # 这里放你存JPG照片的地址
-    txtpath = r"D:\A_myData\dataset\corner1\labels" # 这里放你存label的地址
-    new_file_path = r"D:\A_myData\dataset\corner2"  # 这里填你打算新建立的文件夹的名字
-    split_data(file_path, new_file_path, train_rate=0.8, val_rate=0.2, test_rate=0) #train，val and test的划分。
+    file_path = r"D:\A_myData\dataset\corner3\images_no_blank" # 这里放你存JPG照片的地址
+    txtpath = r"D:\A_myData\dataset\corner3\labels" # 这里放你存label的地址
+    new_file_path = r"D:\A_myData\dataset\corner4"  # 这里填你打算新建立的文件夹的名字
+    split_data(file_path, new_file_path, train_rate=0.85, val_rate=0.15, test_rate=0) #train，val and test的划分。

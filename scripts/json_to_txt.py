@@ -36,8 +36,8 @@ def convert_label(json_dir, save_dir, classes):
 
 
 if __name__ == "__main__":
-    json_dir = r"D:\A_myData\dataset\corner1\jsons"
-    save_dir = r"D:\A_myData\dataset\corner1\labels"
+    json_dir = r"D:\A_myData\dataset\corner3\jsons"
+    save_dir = r"D:\A_myData\dataset\corner3\labels"
     classes = "corner"
 
     if not os.path.exists(save_dir):
