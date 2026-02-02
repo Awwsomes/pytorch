@@ -111,7 +111,13 @@ def write_rt_txt(output_txt_path,rvec,tvec,reprojection_error):
 
         txt.writelines(lines)
 
-def calibration(root_path,camera_matrix,dist_coeffs):
+def calibration(root_path,
+                camera_matrix = np.array([[1380.4350, 0, 974.0183],
+                                                 [0, 1385.0788, 541.4301],
+                                                 [0, 0, 1]],
+                                         dtype=np.float32),
+                dist_coeffs = np.array([[0.0], [0.0], [0.0], [0.0], [0.0]],
+                                       dtype=np.float32)):
     """
     批量生成世界坐标系到相机坐标系的RT矩阵，输出到RT文件夹下
 
@@ -161,20 +167,7 @@ def calibration(root_path,camera_matrix,dist_coeffs):
         write_rt_txt(output_path, rvec, tvec, reprojection_error)
 
 if __name__ == "__main__":
-    # ==============================================
-    # 以下是【必须手动修改】的参数，根据你的实际数据填写
-    # ==============================================
-    # ----------------------
-    # 1. 相机参数（从相机标定结果中获取）
-    # ----------------------
-    # 相机内参矩阵：[[fx, 0, cx], [0, fy, cy], [0, 0, 1]]
-    # fx/fy：x/y轴焦距（单位：像素）；cx/cy：主点坐标（图像中心附近，单位：像素）
-
-    # camera_matrix = np.array([
-    #     [1384.43505859375, 0.0, 974.018310546875],  # 【替换】示例值：fx=800, cx=320
-    #     [0.0, 1385.078857421875,  541.4301147460938],  # 【替换】示例值：fy=800, cy=240
-    #     [0.0, 0.0, 1.0]
-    # ], dtype=np.float32)
+    # 相机内参
     camera_matrix = np.array([
         # 原有内参
         [1380.4350, 0, 974.0183],
@@ -185,13 +178,14 @@ if __name__ == "__main__":
         # [0, 1374.66068396083, 549.075277677568],
         # [0, 0, 1]
     ], dtype=np.float32)
+
     # 相机畸变系数：[k1, k2, p1, p2, k3]（无畸变则全填0）
     # k1/k2/k3：径向畸变；p1/p2：切向畸变（从标定结果获取）
-    dist_coeffs = np.array([[0.0], [0.0], [0.0], [0.0], [0.0]], dtype=np.float32)  # 【替换】示例值：无畸变
-    # dist_coeffs = np.array([[-0.0383938069100753],[1.68404077315427],[0],[0],[0]], dtype=np.float32)  # 【替换】示例值：无畸变
+    dist_coeffs = np.array([[0.0], [0.0], [0.0], [0.0], [0.0]], dtype=np.float32)
+    # dist_coeffs = np.array([[-0.0383938069100753],[1.68404077315427],[0],[0],[0]], dtype=np.float32)
 
     root_dir = r"D:\A_myData\dataset\camera_calibrate\output\260202"
-    calibration(root_dir,camera_matrix, dist_coeffs)
+    calibration(root_dir)
 
     # # ----------------------
     # # 2. 12对3D世界点（手动测量，单位：米/毫米，需统一）
