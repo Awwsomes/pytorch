@@ -76,7 +76,7 @@ def read_object_points(txt_path:str):
             point = np.zeros((1,3))
             for index,num in enumerate(line):
                 if index > 3:
-                    warnings.warn(f"{txt_path} line{idx + 1} 3d point has value more than 3,skip ...")
+                    print(f"[WARN] {txt_path} line{idx + 1} 3d point has value more than 3,skip ...")
                     break
                 point[0,index] = float(num)
             # print(point[0,:])
@@ -97,17 +97,32 @@ def write_rt_txt(output_txt_path,rvec,tvec,reprojection_error):
     with open(output_txt_path,'x') as txt:
         lines = []
 
-        lines.append(f"rvec: {rvec.T}\n")
-        lines.append(f"tvec: {tvec.T}\n")
+        lines.append("rvec: ")
+        for idx,num in enumerate(rvec):
+            lines.append(f"{num.item()}")
+            if idx == len(rvec) - 1:
+                lines.append("\n")
+            else:
+                lines.append(", ")
+
+        lines.append("tvec: ")
+        for idx,num in enumerate(tvec):
+            lines.append(f"{num.item()}")
+            if idx == len(tvec) - 1:
+                lines.append("\n")
+            else:
+                lines.append(", ")
 
         R, _ = cv2.Rodrigues(rvec)  # 罗德里格斯公式：向量→矩阵
         lines.append(f"\n RT:\n")
-        lines.append(f"{R[0,0]} {R[0,1]} {R[0,2]} {tvec[0].item()}\n")
-        lines.append(f"{R[1,0]} {R[1,1]} {R[1,2]} {tvec[1].item()}\n")
-        lines.append(f"{R[2,0]} {R[2,1]} {R[2,2]} {tvec[2].item()}\n")
-        lines.append(f"0 0 0 1\n")
+        lines.append(f"{R[0,0]}, {R[0,1]}, {R[0,2]}, {tvec[0].item()}\n")
+        lines.append(f"{R[1,0]}, {R[1,1]}, {R[1,2]}, {tvec[1].item()}\n")
+        lines.append(f"{R[2,0]}, {R[2,1]}, {R[2,2]}, {tvec[2].item()}\n")
+        lines.append(f"0, 0, 0, 1\n")
 
         lines.append(f"\nreprojection_error: {reprojection_error}")
+
+        # print(lines)
 
         txt.writelines(lines)
 
@@ -144,7 +159,7 @@ def calibration(root_path,
 
         # 找与txt同名的json
         if not os.path.exists(json_path):
-            warnings.warn(f"{root_name} 's json not exist, skip...")
+            print(f"[WARN] {root_name} 's json not exist, skip...")
             continue
 
         # 读取像素坐标点
@@ -164,6 +179,7 @@ def calibration(root_path,
         output_txt_name = f"{root_name}_RT.txt"
         output_path = os.path.join(root_path,"RT",output_txt_name)
         # print(output_path)
+        os.makedirs(os.path.join(root_path,"RT"),exist_ok=True)
         write_rt_txt(output_path, rvec, tvec, reprojection_error)
 
 if __name__ == "__main__":
@@ -184,7 +200,7 @@ if __name__ == "__main__":
     dist_coeffs = np.array([[0.0], [0.0], [0.0], [0.0], [0.0]], dtype=np.float32)
     # dist_coeffs = np.array([[-0.0383938069100753],[1.68404077315427],[0],[0],[0]], dtype=np.float32)
 
-    root_dir = r"D:\A_myData\dataset\camera_calibrate\output\260202"
+    root_dir = r"D:\A_myData\RC26-Vision\calibration\world_to_camera\260309"
     calibration(root_dir)
 
     # # ----------------------
