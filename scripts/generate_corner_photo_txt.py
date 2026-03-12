@@ -30,6 +30,6 @@ def generate_corner_photo_txt(json_dir,output_path):
             write_txt(txt_file,points,output_path)
 
 if __name__ ==  "__main__":
-    json_path = r"/media/awwsome/ECC8DCF5C8DCBF50/Users/tianc/Desktop/image2/jsons"
-    output_path = r"/home/awwsome/corner_photo.txt"
+    json_path = r"D:\A_myData\RC26-Vision\calibration\lidar_camera\260311\json"
+    output_path = r"D:\A_myData\RC26-Vision\calibration\lidar_camera\260311\txt\corner_photo.txt"
     generate_corner_photo_txt(json_path,output_path)
