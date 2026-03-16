@@ -2,14 +2,14 @@ import cv2
 import os
 
 i = 0
-idx = 720
+idx = 0
 
 origin_idx=idx
 
 ## 单纯读取文件夹下所有视频，全部保存到一个文件夹中，一直编号
-path_videos = r"D:\A_myData\dataset\z_video\corner2\on"
-path_output = r"D:\A_myData\dataset\corner3"
-output_img_name = "corner3_"
+path_videos = r"D:\A_myData\RC26-Vision\dataset\z_video\corner3"
+path_output = r"D:\A_myData\RC26-Vision\dataset\corner4"
+output_img_name = "corner4_"
 video_extension = [".mp4",".avi",".mov",".wmv",".flv"]
 
 list_video = os.listdir(path_videos)
@@ -30,7 +30,7 @@ for j,video in enumerate(list_video):
         ret, frame = cap.read()
         if not ret:
             break
-        if i % 8 == 1 and i > 30:
+        if i % 30 == 1 and i > 30:
             img_name = output_img_name + "{}.png".format(idx)
             output_path = os.path.join(path_output,img_name)
             # frame = cv2.resize(frame, (32,32))
