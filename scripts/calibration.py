@@ -175,6 +175,9 @@ def calibration(root_path,
         rvec,tvec = solve_pnp(object_points, image_points, camera_matrix, dist_coeffs)
         reprojection_error = compute_reprojection_error(object_points, image_points, rvec, tvec, camera_matrix, dist_coeffs)
 
+        # 打印重投影误差
+        print(f"[INFO] {txt_name} reprojection_error: {reprojection_error}")
+
         # 输出结果
         output_txt_name = f"{root_name}_RT.txt"
         output_path = os.path.join(root_path,"RT",output_txt_name)
@@ -200,7 +203,7 @@ if __name__ == "__main__":
     dist_coeffs = np.array([[0.0], [0.0], [0.0], [0.0], [0.0]], dtype=np.float32)
     # dist_coeffs = np.array([[-0.0383938069100753],[1.68404077315427],[0],[0],[0]], dtype=np.float32)
 
-    root_dir = r"D:\A_myData\RC26-Vision\calibration\world_to_camera\260309"
+    root_dir = r"D:\A_myData\RC26-Vision\calibration\world_to_camera\260320"
     calibration(root_dir)
 
     # # ----------------------
