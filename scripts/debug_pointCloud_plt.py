@@ -234,11 +234,11 @@ fig.canvas.mpl_connect('button_press_event', on_click)
 ax1.set_xlim(0, 100)
 update_2d_axes('x-t')  # 初始化设置
 
-ax2.set_xlabel('X');
-ax2.set_ylabel('Y');
+ax2.set_xlabel('X')
+ax2.set_ylabel('Y')
 ax2.set_zlabel('Z')
-ax2.set_xlim(-1, 1);
-ax2.set_ylim(-1, 1);
+ax2.set_xlim(-1, 1)
+ax2.set_ylim(-1, 1)
 ax2.set_zlim(0, 10)
 
 for i in range(100):

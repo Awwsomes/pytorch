@@ -1,8 +1,8 @@
-path: D:\\A_myData\\dataset\\juanZhou3
+path: /home/awwsome/datasets
 
-train: train\\images
-val: val\\images
-test: test\\images
+train: train/images
+val: val/images
+test: test/images
 
 #classes
 names:
