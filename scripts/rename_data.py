@@ -44,7 +44,7 @@ def rename_data(root_dir:str,output_path:str,img_root_name:str,start_idx:int,lis
 def rename_data_one_dir(root_dir:str,output_path:str,img_root_name:str,start_idx:int,list_ext:list):
     """
     复制并重命名ext后缀名列表中的文件，会处理根目录底下所有子目录的文件。
-    输出文件会按照原文件夹的层级储存
+    输出文件全部拷贝到输出目录下（一个文件夹）
     注意：不会同步拷贝标签
     """
     print("拷贝并重命名文件...")
