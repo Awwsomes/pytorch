@@ -2,8 +2,14 @@ import rename_data
 import os
 import shutil
 import json
+import cv2
+import numpy as np
+from tqdm import tqdm
+import re
 
-def rename_data_and_generate_jsons(root_dir:str,output_root_path:str,start_idx:int):
+import zbuffer.zb_main as zb
+
+def rename_data_and_generate_jsons(root_dir:str,output_root_path:str,start_idx:int, blue_or_red:bool):
     """
     复制并重命名ext后缀名列表中的文件，会处理根目录底下所有子目录的文件。
     输出文件全部拷贝到输出目录下（一个文件夹）
@@ -33,18 +39,16 @@ def rename_data_and_generate_jsons(root_dir:str,output_root_path:str,start_idx:i
 	}
     """
     print("拷贝并重命名文件...")
-    os.makedirs(os.path.join(output_root_path,"images"), exist_ok=True)
-    os.makedirs(os.path.join(output_root_path,"labels"), exist_ok=True)
 
     idx = start_idx
-    for root,_,files in os.walk(root_dir):
+    for root,_,files in tqdm(os.walk(root_dir)):
         # print(len(files))
         if len(files) == 0:
             continue
         else:
             global_imgs_list = [x for x in files if os.path.splitext(os.path.join(root_dir,x))[1] in [".png", ".jpg", ".jpeg", ".bmp"]]
             txts_list = [x for x in files if os.path.splitext(os.path.join(root_dir,x))[1] == ".txt"]
-            print(len(global_imgs_list), len(txts_list))
+            # print(len(global_imgs_list), len(txts_list))
             if len(global_imgs_list) == 0 or len(txts_list) == 0:
                 continue
 
@@ -74,21 +78,109 @@ def rename_data_and_generate_jsons(root_dir:str,output_root_path:str,start_idx:i
                 rvec = [float(x.strip()) for x in lines[0].strip().split(",")]
                 tvec = [float(x.strip()) for x in lines[1].strip().split(",")]
                 labels = [int(x) for x in lines[2].strip().split()]
+                # 转换成 1 存在， 0 不存在
+                labels_convert = [0 if x == 4 else 1 for x in labels]
+                # 蓝色场地，转换成一号位从左边数起
+                if blue_or_red:
+                    labels_convert_temp = [labels_convert[2], labels_convert[1], labels_convert[0],
+                                           labels_convert[5], labels_convert[4], labels_convert[3],
+                                           labels_convert[8], labels_convert[7], labels_convert[6],
+                                           labels_convert[11], labels_convert[10], labels_convert[9]]
+                    labels_convert = labels_convert_temp
 
                 # 生成字典，写入json文件
-                json_content = {
-                    "rvec": rvec,
-                    "tvec": tvec,
-                    "labels": labels
-                }
-                json.dump(json_content, json_file)
+                # json_content = {
+                #     "rvec": rvec,
+                #     "tvec": tvec,
+                #     "labels": labels_convert
+                # }
+                # json.dump(json_content, json_file)
+                json_content = (f"{{\n"
+                                f"    \"rvec\": {rvec},\n"
+                                f"    \"tvec\": {tvec},\n"
+                                f"    \"labels\": {labels_convert}\n"
+                                f"}}")
+                json_file.writelines(json_content)
 
             idx += 1
     print("拷贝并重命名文件完成.")
+
+def generate_car_datasets(root_dir:str,output_root_path:str,start_idx:int, blue_or_red:bool):
+    os.makedirs(os.path.join(output_root_path,"images"), exist_ok=True)
+    os.makedirs(os.path.join(output_root_path,"labels"), exist_ok=True)
+    os.makedirs(os.path.join(output_root_path,"roi_images"), exist_ok=True)
+
+    rename_data_and_generate_jsons(root_dir, output_root_path, start_idx, blue_or_red)
+
+    # 生成并写入roi图像和point_size
+    print("生成roi图像中...")
+
+    # 读图像，读rt
+    global_img_names_list = os.listdir(os.path.join(output_root_path,"images"))
+    global_img_names_list = [x for x in global_img_names_list if os.path.splitext(os.path.join(output_root_path,x))[1] in [".png", ".jpg", ".jpeg", ".bmp"]]
+    global_img_names_list.sort(key=lambda f: int(re.findall(r'\d+', f)[0]) if re.findall(r'\d+', f) else float('inf'))
+    global_imgs_list = [cv2.imread(os.path.join(output_root_path, "images", img)) for img in global_img_names_list]
+
+    rvec_list = []
+    tvec_list = []
+    labels_list = []
+    idx_list = []
+    for img_name in global_img_names_list:
+        # 获取图片名字里的序号
+        idx = os.path.splitext(img_name)[0].split("_")[1]
+        # print(idx)
+        idx_list.append(idx)
+
+        label_name = f"label_{idx}.json"
+        label_path = os.path.join(output_root_path, "labels", label_name)
+        # print(label_path)
+        if not os.path.exists(label_path):
+            # raise FileNotFoundError(f"[WARN]: {img_name} 's label not exists")
+            print(f"[WARN]: {img_name} 's label not exists, skip...")
+            continue
+        with open(label_path, 'r') as label_file:
+            json_content = json.load(label_file)
+            rvec_list.append(np.stack(json_content["rvec"]).reshape(3,1))
+            tvec_list.append(np.stack(json_content["tvec"]).reshape(3,1))
+            labels_list.append(np.stack(json_content["labels"]))
+
+    # 拼接成batch
+    global_imgs_batch = np.stack(global_imgs_list, axis=0)
+    rvec_batch = np.stack(rvec_list, axis=0)
+    tvec_batch = np.stack(tvec_list, axis=0)
+    labels_batch = np.stack(labels_list, axis=0)
+    # print(rvec_batch.shape)
+
+    # 输入zb
+    roi_imgs_batch, point_size_batch = zb.process_zbuffer_with_rt_batch(global_imgs_batch, rvec_batch, tvec_batch, labels_batch)
+
+    # 写入roi到roi_images文件夹
+    # 直接遍历np矩阵就是在第0维上遍历
+    print("保存roi图像中...")
+    for i, roi_imgs in enumerate(roi_imgs_batch):
+        roi_imgs_path = os.path.join(output_root_path, "roi_images", f"roi_{idx_list[i]}")
+        os.makedirs(roi_imgs_path, exist_ok=True)
+        for idx, roi_img in enumerate(roi_imgs):
+            roi_name = f"{idx+1}.png"
+            roi_img_path = os.path.join(roi_imgs_path, roi_name)
+            cv2.imwrite(roi_img_path, roi_img)
+
+    # 写入接收的point_size到json
+    print("写入point_size中...")
+    for i, point_size in enumerate(point_size_batch):
+        label_path = os.path.join(output_root_path, "labels", f"label_{idx_list[i]}.json")
+        with open(label_path, 'w') as label_file:
+            json_content = (f"{{\n"
+                                f"    \"rvec\": {rvec_list[i].T.tolist()},\n"
+                                f"    \"tvec\": {tvec_list[i].T.tolist()},\n"
+                                f"    \"labels\": {labels_list[i].tolist()},\n"
+                                f"    \"point_size\": {point_size.tolist()}\n"
+                                f"}}")
+            label_file.writelines(json_content)
 
 if __name__ == "__main__":
     input_dir = r"D:\A_myData\RC26-Vision\dataset\A_car\2026_3_26"
     output_root_dir = r"D:\A_myData\RC26-Vision\dataset\A_car\2026_3_26_output"
     start_idx = 1
 
-    rename_data_and_generate_jsons(input_dir, output_root_dir, start_idx)
+    generate_car_datasets(input_dir, output_root_dir, start_idx, True)
