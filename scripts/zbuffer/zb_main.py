@@ -93,7 +93,7 @@ def process_zbuffer_with_rt_batch(global_imgs_np, rvecs, tvecs, exist_boxes_batc
     batch_roi_imgs = []
     batch_point_size = []
 
-    print(rvecs[0].shape)
+    # print(rvecs[0].shape)
 
     for b in range(batch_size):
         # 单样本ROI生成（复用原有逻辑）

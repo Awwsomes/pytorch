@@ -62,37 +62,44 @@
 #
 # copy_dirs_with_ori_name("D:\A_myData\dataset\juanZhou_gazebo5-cls","D:\A_myData\dataset\juanZhou_gazebo6")
 
+# import os
+# import shutil
+#
+# # label_path = r"D:\A_myData\dataset\test_map50_cla_\labels"
+# # output_root_path = r"D:\A_myData\dataset\test_map50_cla_\labels_new"
+# # os.makedirs(output_root_path,exist_ok=True)
+# # list_label = os.listdir(label_path)
+# # for label in list_label:
+# #     label_name,label_ext = os.path.splitext(label)
+# #     # print(label_name,label_ext)
+# #     label_idx = label_name.split("_")[1]
+# #     # print(label_idx)
+# #     new_label = f"images_{label_idx}{label_ext}"
+# #     # print(new_label)
+# #     origin_path = os.path.join(label_path,label)
+# #     # print(origin_path)
+# #     output_path = os.path.join(output_root_path,new_label)
+# #     # print(output_path)
+# #     shutil.copy(origin_path,output_path)
+#
+# # import re
+# #
+# # input_dir = r"D:\A_myData\RC26-Vision\dataset\A_car\2026_3_26_output\images"
+# #
+# # list_img = os.listdir(input_dir)
+# # list_img.sort(key=lambda f: int(re.findall(r'\d+', f)[0]) if re.findall(r'\d+', f) else float('inf'))
+# # print(list_img)
+#
+# import numpy as np
+#
+# list_d = [1,2,3,4]
+# d = np.stack(list_d)
+#
+# print(d)
+
+# import os
+# print(os.path.split("D:\A_myData\RC26-Vision\dataset\juanZhou_car1"))
+
 import os
-import shutil
-
-# label_path = r"D:\A_myData\dataset\test_map50_cla_\labels"
-# output_root_path = r"D:\A_myData\dataset\test_map50_cla_\labels_new"
-# os.makedirs(output_root_path,exist_ok=True)
-# list_label = os.listdir(label_path)
-# for label in list_label:
-#     label_name,label_ext = os.path.splitext(label)
-#     # print(label_name,label_ext)
-#     label_idx = label_name.split("_")[1]
-#     # print(label_idx)
-#     new_label = f"images_{label_idx}{label_ext}"
-#     # print(new_label)
-#     origin_path = os.path.join(label_path,label)
-#     # print(origin_path)
-#     output_path = os.path.join(output_root_path,new_label)
-#     # print(output_path)
-#     shutil.copy(origin_path,output_path)
-
-# import re
-#
-# input_dir = r"D:\A_myData\RC26-Vision\dataset\A_car\2026_3_26_output\images"
-#
-# list_img = os.listdir(input_dir)
-# list_img.sort(key=lambda f: int(re.findall(r'\d+', f)[0]) if re.findall(r'\d+', f) else float('inf'))
-# print(list_img)
-
-import numpy as np
-
-list_d = [1,2,3,4]
-d = np.stack(list_d)
-
-print(d)
+path = r"D:\Wechat File\xwechat_files\wxid_wlxqnttgybjx12_af55\msg\file\2026-03\2026_3_26\2026_3_26\4\imageRT\imagert1\0\image.png"
+print(os.path.splitext(path)[0], os.path.splitext(path)[1])
