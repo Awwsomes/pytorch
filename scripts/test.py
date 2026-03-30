@@ -100,6 +100,18 @@
 # import os
 # print(os.path.split("D:\A_myData\RC26-Vision\dataset\juanZhou_car1"))
 
-import os
-path = r"D:\Wechat File\xwechat_files\wxid_wlxqnttgybjx12_af55\msg\file\2026-03\2026_3_26\2026_3_26\4\imageRT\imagert1\0\image.png"
-print(os.path.splitext(path)[0], os.path.splitext(path)[1])
+# import os
+# path = r"D:\Wechat File\xwechat_files\wxid_wlxqnttgybjx12_af55\msg\file\2026-03\2026_3_26\2026_3_26\4\imageRT\imagert1\0\image.png"
+# print(os.path.splitext(path)[0], os.path.splitext(path)[1])
+
+# from ultralytics import YOLO
+#
+# model = YOLO(r"D:\A_myData\RC26-Vision\Pytorch\yolov5-master\runs\train\角点检测2_1000_260202\corner2_v5s_1000_260202.pt")
+# model.predict(
+#     source=r"D:\A_myData\RC26-Vision\dataset\A_car\2026_3_28\images\image_89.png",
+#     show=False,
+#     save_txt=True,
+#     save_conf=True,
+#     save=False,
+#     project=r"D:\A_myData\RC26-Vision\Pytorch\yolov5-master\runs\detect"
+# )
