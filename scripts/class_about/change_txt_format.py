@@ -5,6 +5,8 @@ def change_txt_format(input_path,output_path):
     从 conf idx 格式 变为 idx conf
     e.g. 1.00 22 -> 22 1.00
     """
+    os.makedirs(output_path, exist_ok=True)
+
     list_txt = os.listdir(input_path)
     list_txt = [x for x in list_txt if os.path.isfile(os.path.join(input_path,x))]
     list_txt = [x for x in list_txt if x.endswith(".txt")]

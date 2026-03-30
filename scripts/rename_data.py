@@ -48,6 +48,7 @@ def rename_data_one_dir(root_dir:str,output_path:str,img_root_name:str,start_idx
     注意：不会同步拷贝标签
     """
     print("拷贝并重命名文件...")
+    os.makedirs(output_path, exist_ok=True)
     idx = start_idx
     for root,_,files in os.walk(root_dir):
         files = [x for x in files if os.path.splitext(x)[1] in list_ext]

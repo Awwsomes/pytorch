@@ -1,4 +1,3 @@
-import rename_data
 import os
 import shutil
 import json
@@ -6,12 +5,19 @@ import cv2
 import numpy as np
 from tqdm import tqdm
 import re
+from ultralytics import YOLO
 
 import zbuffer.zb_main as zb
+from convert_train_dataset_to_class_dataset import classify_dataset_by_label
+from rename_data import rename_data_one_dir
+from class_about.change_txt_format import change_txt_format
 
-def rename_data_and_generate_jsons(root_dir:str,output_root_path:str,start_idx:int, blue_or_red:bool):
+def generate_global_dataset(root_dir:str,output_root_path:str,start_idx:int, blue_or_red:bool):
     """
-    复制并重命名ext后缀名列表中的文件，会处理根目录底下所有子目录的文件。
+    复制global图片并重命名为"image_{}"，序号从start_idx开始
+    对应的rt.txt转换为"label_{}"的json文件，序号从start_idx开始
+    把rt.txt里的label_list从1234转换为01（转换为筛空列表）
+    会处理根目录底下所有子目录的文件。
     输出文件全部拷贝到输出目录下（一个文件夹）
     文件夹格式
     ----dataset
@@ -105,19 +111,61 @@ def rename_data_and_generate_jsons(root_dir:str,output_root_path:str,start_idx:i
             idx += 1
     print("拷贝并重命名文件完成.")
 
-def generate_car_datasets(root_dir:str,output_root_path:str,start_idx:int, blue_or_red:bool):
-    os.makedirs(os.path.join(output_root_path,"images"), exist_ok=True)
-    os.makedirs(os.path.join(output_root_path,"labels"), exist_ok=True)
-    os.makedirs(os.path.join(output_root_path,"roi_images"), exist_ok=True)
+def generate_11class_dataset(class_model_path, input_roi_img_path, output_root_dir, img_root_name, start_idx):
+    # 创建临时的检测数据集
+    root_path = "temp"
+    imgs_path = os.path.join(root_path, "images")
+    os.makedirs(imgs_path, exist_ok=True)
 
-    rename_data_and_generate_jsons(root_dir, output_root_path, start_idx, blue_or_red)
+    # 重命名并复制roi图片
+    rename_data_one_dir(input_roi_img_path, imgs_path, img_root_name=img_root_name, start_idx=start_idx, list_ext=[".png", ".jpg", ".jpeg", ".bmp"])
 
+    #
+    model = YOLO(class_model_path)
+    # 遍历roi，给YOLO分类预测
+    result = model.predict(source=imgs_path,
+                  show=False,
+                  save_txt=True,
+                  save_conf=True,
+                  save=False,
+                  conf=0.2,
+                  device="0",
+                  project=r"D:\A_myData\RC26-Vision\Pytorch\yolo11_cls\runs\classify"
+                  )
+
+    # 构造检测数据集
+    labels_path = os.path.join(root_path, "labels_no_fix")
+    os.makedirs(labels_path, exist_ok=True)
+    txt_list = os.listdir(os.path.join(result[0].save_dir, "labels"))
+    # print(result[0].save_dir)
+    for txt in txt_list:
+        txt_path = os.path.join(result[0].save_dir, "labels", txt)
+        new_txt_path = os.path.join(labels_path, txt)
+        # print(txt_path)
+        # print(new_txt_path)
+        shutil.copy(txt_path, new_txt_path)
+
+    # 转换txt格式
+    new_labels_path = os.path.join(root_path, "labels")
+    change_txt_format(labels_path, new_labels_path)
+
+    # 生成分类数据集
+    classify_dataset_by_label(root_path, output_root_dir, ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
+                                                                "11", "12", "13", "14", "15", "16", "17", "18", "19", "20",
+                                                                "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31"])
+
+    # 删除临时的检测数据集
+    shutil.rmtree(root_path)
+
+def generate_roi_data(output_root_path):
     # 生成并写入roi图像和point_size
     print("生成roi图像中...")
 
     # 读图像，读rt
-    global_img_names_list = os.listdir(os.path.join(output_root_path,"images"))
-    global_img_names_list = [x for x in global_img_names_list if os.path.splitext(os.path.join(output_root_path,x))[1] in [".png", ".jpg", ".jpeg", ".bmp"]]
+    global_img_names_list = os.listdir(os.path.join(output_root_path, "images"))
+    global_img_names_list = [x for x in global_img_names_list if
+                             os.path.splitext(os.path.join(output_root_path, x))[1] in [".png", ".jpg", ".jpeg",
+                                                                                        ".bmp"]]
     global_img_names_list.sort(key=lambda f: int(re.findall(r'\d+', f)[0]) if re.findall(r'\d+', f) else float('inf'))
     global_imgs_list = [cv2.imread(os.path.join(output_root_path, "images", img)) for img in global_img_names_list]
 
@@ -140,8 +188,8 @@ def generate_car_datasets(root_dir:str,output_root_path:str,start_idx:int, blue_
             continue
         with open(label_path, 'r') as label_file:
             json_content = json.load(label_file)
-            rvec_list.append(np.stack(json_content["rvec"]).reshape(3,1))
-            tvec_list.append(np.stack(json_content["tvec"]).reshape(3,1))
+            rvec_list.append(np.stack(json_content["rvec"]).reshape(3, 1))
+            tvec_list.append(np.stack(json_content["tvec"]).reshape(3, 1))
             labels_list.append(np.stack(json_content["labels"]))
 
     # 拼接成batch
@@ -152,7 +200,8 @@ def generate_car_datasets(root_dir:str,output_root_path:str,start_idx:int, blue_
     # print(rvec_batch.shape)
 
     # 输入zb
-    roi_imgs_batch, point_size_batch = zb.process_zbuffer_with_rt_batch(global_imgs_batch, rvec_batch, tvec_batch, labels_batch)
+    roi_imgs_batch, point_size_batch = zb.process_zbuffer_with_rt_batch(global_imgs_batch, rvec_batch, tvec_batch,
+                                                                        labels_batch)
 
     # 写入roi到roi_images文件夹
     # 直接遍历np矩阵就是在第0维上遍历
@@ -161,7 +210,7 @@ def generate_car_datasets(root_dir:str,output_root_path:str,start_idx:int, blue_
         roi_imgs_path = os.path.join(output_root_path, "roi_images", f"roi_{idx_list[i]}")
         os.makedirs(roi_imgs_path, exist_ok=True)
         for idx, roi_img in enumerate(roi_imgs):
-            roi_name = f"{idx+1}.png"
+            roi_name = f"{idx + 1}.png"
             roi_img_path = os.path.join(roi_imgs_path, roi_name)
             cv2.imwrite(roi_img_path, roi_img)
 
@@ -171,12 +220,24 @@ def generate_car_datasets(root_dir:str,output_root_path:str,start_idx:int, blue_
         label_path = os.path.join(output_root_path, "labels", f"label_{idx_list[i]}.json")
         with open(label_path, 'w') as label_file:
             json_content = (f"{{\n"
-                                f"    \"rvec\": {rvec_list[i].T.tolist()},\n"
-                                f"    \"tvec\": {tvec_list[i].T.tolist()},\n"
-                                f"    \"labels\": {labels_list[i].tolist()},\n"
-                                f"    \"point_size\": {point_size.tolist()}\n"
-                                f"}}")
+                            f"    \"rvec\": {rvec_list[i].T.tolist()},\n"
+                            f"    \"tvec\": {tvec_list[i].T.tolist()},\n"
+                            f"    \"labels\": {labels_list[i].tolist()},\n"
+                            f"    \"point_size\": {point_size.tolist()}\n"
+                            f"}}")
             label_file.writelines(json_content)
+
+def generate_car_datasets(root_dir:str,output_root_path:str,start_idx:int, blue_or_red:bool, ):
+    os.makedirs(os.path.join(output_root_path,"images"), exist_ok=True)
+    os.makedirs(os.path.join(output_root_path,"labels"), exist_ok=True)
+    os.makedirs(os.path.join(output_root_path,"roi_images"), exist_ok=True)
+
+    #
+    generate_global_dataset(root_dir, output_root_path, start_idx, blue_or_red)
+
+    generate_roi_data(output_root_path)
+
+    generate_11class_dataset()
 
 if __name__ == "__main__":
     input_dir = r"D:\A_myData\RC26-Vision\dataset\A_car\2026_3_26"
