@@ -6,11 +6,17 @@ import numpy as np
 from tqdm import tqdm
 import re
 from ultralytics import YOLO
+import argparse
+
+import sys
+sys.path.append(r"D:\A_myData\RC26-Vision\Pytorch\yolov5-master")
+import detect as yolov5_detect
 
 import zbuffer.zb_main as zb
 from convert_train_dataset_to_class_dataset import classify_dataset_by_label
 from rename_data import rename_data_one_dir
 from class_about.change_txt_format import change_txt_format
+from txt_to_json import txt_to_json
 
 def generate_global_dataset(root_dir:str,output_root_path:str,start_idx:int, blue_or_red:bool):
     """
@@ -49,7 +55,7 @@ def generate_global_dataset(root_dir:str,output_root_path:str,start_idx:int, blu
     :param blue_or_red: 蓝色场地：true 红色场地：false
     :return: 无
     """
-    print("拷贝并重命名文件...")
+    print("拷贝并重命名 global_images, 处理rt.txt...\n")
 
     # 递归遍历根文件夹及子文件夹下所有内容
     idx = start_idx
@@ -127,7 +133,7 @@ def generate_global_dataset(root_dir:str,output_root_path:str,start_idx:int, blu
 
         # 序号加一
         idx += 1
-    print("拷贝并重命名文件完成.")
+    print("完成.\n")
 
 def generate_11class_dataset(class_model_path, input_roi_img_path, output_root_dir, start_idx=0):
     """
@@ -141,7 +147,7 @@ def generate_11class_dataset(class_model_path, input_roi_img_path, output_root_d
     :param start_idx: 文件名起始序号
     :return: 无
     """
-    print("生成分类数据集中...")
+    print("生成分类数据集中...\n")
 
     # 创建临时的检测数据集
     root_path = "temp"
@@ -155,6 +161,7 @@ def generate_11class_dataset(class_model_path, input_roi_img_path, output_root_d
     img_root_name += "_"
 
     # 重命名并复制roi图片
+    print("拷贝并重命名roi图片...\n")
     rename_data_one_dir(input_roi_img_path, imgs_path, img_root_name=img_root_name, start_idx=start_idx, list_ext=[".png", ".jpg", ".jpeg", ".bmp"])
 
     # 读取模型
@@ -163,6 +170,7 @@ def generate_11class_dataset(class_model_path, input_roi_img_path, output_root_d
         raise TypeError(f"[ERROR] Not a class model: {class_model_path}")
 
     # 遍历roi，给YOLO分类预测
+    print("分类模型预测roi图片...\n")
     model_predict_output_dir = r"D:\A_myData\RC26-Vision\Pytorch\yolo11_cls\runs\classify"
     if not os.path.exists(model_predict_output_dir):
         model_predict_output_dir = r"model_predict"
@@ -187,6 +195,7 @@ def generate_11class_dataset(class_model_path, input_roi_img_path, output_root_d
     change_txt_format(labels_path, new_labels_path)
 
     # 生成分类数据集
+    print("构建分类数据集中...\n")
     classify_dataset_by_label(root_path, output_root_dir, ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
                                                                 "11", "12", "13", "14", "15", "16", "17", "18", "19", "20",
                                                                 "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31"])
@@ -200,6 +209,8 @@ def generate_11class_dataset(class_model_path, input_roi_img_path, output_root_d
         txt.write(f"{result[0].save_dir}")
     with open(os.path.join(result[0].save_dir, "对应数据集文件夹路径.txt"), 'w') as txt:
         txt.write(f"{output_root_dir}")
+
+    print("完成.\n")
 
 def generate_roi_data(output_root_path):
     """
@@ -227,7 +238,7 @@ def generate_roi_data(output_root_path):
     :return: 无
     """
     # 生成并写入roi图像和point_size
-    print("生成roi图像中...")
+    print("生成roi图像中...\n")
 
     # 读图像，读rt
     global_img_names_list = os.listdir(os.path.join(output_root_path, "images"))
@@ -273,7 +284,7 @@ def generate_roi_data(output_root_path):
 
     # 写入roi到roi_images文件夹
     # 直接遍历np矩阵就是在第0维上遍历
-    print("保存roi图像中...")
+    print("保存roi图像中...\n")
     for i, roi_imgs in enumerate(roi_imgs_batch):
         roi_imgs_path = os.path.join(output_root_path, "roi_images", f"roi_{idx_list[i]}")
         os.makedirs(roi_imgs_path, exist_ok=True)
@@ -283,7 +294,7 @@ def generate_roi_data(output_root_path):
             cv2.imwrite(roi_img_path, roi_img)
 
     # 写入接收的point_size到json
-    print("写入point_size中...")
+    print("写入point_size中...\n")
     for i, point_size in enumerate(point_size_batch):
         label_path = os.path.join(output_root_path, "labels", f"label_{idx_list[i]}.json")
         with open(label_path, 'w') as label_file:
@@ -295,7 +306,125 @@ def generate_roi_data(output_root_path):
                             f"}}")
             label_file.writelines(json_content)
 
-def generate_car_datasets(root_dir:str,output_root_path:str,start_idx:int, blue_or_red:bool, class_model_path:str, output_class_dataset_root_path:str):
+    print("完成.\n")
+
+def yolov5_detect_parse_opt(model_path:str, imgs_path:str, conf_thre:float=0.3):
+    """
+    Parse command-line arguments for YOLOv5 detection, allowing custom inference options and model configurations.
+
+    Args:
+        --weights (str | list[str], optional): Model path or Triton URL. Defaults to ROOT / 'yolov5s.pt'.
+        --source (str, optional): File/dir/URL/glob/screen/0(webcam). Defaults to ROOT / 'data/images'.
+        --data (str, optional): Dataset YAML path. Provides dataset configuration information.
+        --imgsz (list[int], optional): Inference size (height, width). Defaults to [640].
+        --conf-thres (float, optional): Confidence threshold. Defaults to 0.25.
+        --iou-thres (float, optional): NMS IoU threshold. Defaults to 0.45.
+        --max-det (int, optional): Maximum number of detections per image. Defaults to 1000.
+        --device (str, optional): CUDA device, i.e., '0' or '0,1,2,3' or 'cpu'. Defaults to "".
+        --view-img (bool, optional): Flag to display results. Defaults to False.
+        --save-txt (bool, optional): Flag to save results to *.txt files. Defaults to False.
+        --save-csv (bool, optional): Flag to save results in CSV format. Defaults to False.
+        --save-conf (bool, optional): Flag to save confidences in labels saved via --save-txt. Defaults to False.
+        --save-crop (bool, optional): Flag to save cropped prediction boxes. Defaults to False.
+        --nosave (bool, optional): Flag to prevent saving images/videos. Defaults to False.
+        --classes (list[int], optional): List of classes to filter results by, e.g., '--classes 0 2 3'. Defaults to None.
+        --agnostic-nms (bool, optional): Flag for class-agnostic NMS. Defaults to False.
+        --augment (bool, optional): Flag for augmented inference. Defaults to False.
+        --visualize (bool, optional): Flag for visualizing features. Defaults to False.
+        --update (bool, optional): Flag to update all models in the model directory. Defaults to False.
+        --project (str, optional): Directory to save results. Defaults to ROOT / 'runs/detect'.
+        --name (str, optional): Sub-directory name for saving results within --project. Defaults to 'exp'.
+        --exist-ok (bool, optional): Flag to allow overwriting if the project/name already exists. Defaults to False.
+        --line-thickness (int, optional): Thickness (in pixels) of bounding boxes. Defaults to 3.
+        --hide-labels (bool, optional): Flag to hide labels in the output. Defaults to False.
+        --hide-conf (bool, optional): Flag to hide confidences in the output. Defaults to False.
+        --half (bool, optional): Flag to use FP16 half-precision inference. Defaults to False.
+        --dnn (bool, optional): Flag to use OpenCV DNN for ONNX inference. Defaults to False.
+        --vid-stride (int, optional): Video frame-rate stride, determining the number of frames to skip in between
+            consecutive frames. Defaults to 1.
+
+    Returns:
+        argparse.Namespace: Parsed command-line arguments as an argparse.Namespace object.
+
+    Example:
+        ```python
+        from ultralytics import YOLOv5
+        args = YOLOv5.parse_opt()
+        ```
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--weights", nargs="+", type=str, default=model_path, help="model path or triton URL")
+    parser.add_argument("--source", type=str, default=imgs_path, help="file/dir/URL/glob/screen/0(webcam)")
+    parser.add_argument("--data", type=str, default=r"D:\A_myData\Pytorch\pytorch\dataset_yaml\corner4.yaml", help="(optional) dataset.yaml path")
+    parser.add_argument("--imgsz", "--img", "--img-size", nargs="+", type=int, default=[640], help="inference size h,w")
+    parser.add_argument("--conf-thres", type=float, default=conf_thre, help="confidence threshold")
+    parser.add_argument("--iou-thres", type=float, default=0, help="NMS IoU threshold")
+    parser.add_argument("--max-det", type=int, default=64, help="maximum detections per image")
+    parser.add_argument("--device", default="0", help="cuda device, i.e. 0 or 0,1,2,3 or cpu")
+    parser.add_argument("--view-img", action="store_true",default=False, help="show results")
+    parser.add_argument("--save-txt", action="store_true", default=True, help="save results to *.txt")
+    parser.add_argument(
+        "--save-format",
+        type=int,
+        default=0,
+        help="whether to save boxes coordinates in YOLO format or Pascal-VOC format when save-txt is True, 0 for YOLO and 1 for Pascal-VOC",
+    )
+    parser.add_argument("--save-csv", action="store_true", help="save results in CSV format")
+    parser.add_argument("--save-conf", action="store_true", default=True,help="save confidences in --save-txt labels")
+    parser.add_argument("--save-crop", action="store_true", help="save cropped prediction boxes")
+    parser.add_argument("--nosave", action="store_true", default=True,help="do not save images/videos")
+    parser.add_argument("--classes", nargs="+", type=int, help="filter by class: --classes 0, or --classes 0 2 3")
+    parser.add_argument("--agnostic-nms", action="store_true", help="class-agnostic NMS")
+    parser.add_argument("--augment", action="store_true", help="augmented inference")
+    parser.add_argument("--visualize", action="store_true", help="visualize features")
+    parser.add_argument("--update", action="store_true", help="update all models")
+    parser.add_argument("--project", default=r"D:\A_myData\RC26-Vision\Pytorch\yolov5-master\runs\detect", help="save results to project/name")
+    parser.add_argument("--name", default="exp", help="save results to project/name")
+    parser.add_argument("--exist-ok", action="store_true", help="existing project/name ok, do not increment")
+    parser.add_argument("--line-thickness", default=3, type=int, help="bounding box thickness (pixels)")
+    parser.add_argument("--hide-labels", default=False, action="store_true", help="hide labels")
+    parser.add_argument("--hide-conf", default=False, action="store_true", help="hide confidences")
+    parser.add_argument("--half", action="store_true", help="use FP16 half-precision inference")
+    parser.add_argument("--dnn", action="store_true", help="use OpenCV DNN for ONNX inference")
+    parser.add_argument("--vid-stride", type=int, default=1, help="video frame-rate stride")
+    opt = parser.parse_args()
+    opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
+    # print_args(vars(opt))
+    return opt
+
+def generate_corner_datasets(output_root_path:str, detect_model_path:str, conf_threshold:float = 0.3):
+    """
+    利用已有v5角点检测模型预测图片，生成角点数据集，同时转换txt为labelme_json
+    需要结合官方yolov5-master包运行
+    在总数据集的根目录下新建corner_jsons，存放json文件
+
+    :param output_root_path: 总数据集的根目录
+    :param detect_model_path: v5检测模型路径
+    :param conf_threshold: 用模型预测时的置信度阈值
+    :return: 无
+    """
+
+    print("生成角点数据集...\n")
+
+    # 创建json
+    jsons_path = os.path.join(output_root_path, "corner_jsons")
+    os.makedirs(jsons_path, exist_ok=True)
+    images_path = os.path.join(output_root_path, "images")
+
+    # 调用detct预测
+    print("v5模型预测图片...\n")
+    opt = yolov5_detect_parse_opt(detect_model_path, images_path, conf_threshold)
+    save_path = yolov5_detect.main(opt)
+    # print(save_path)
+
+    # 将txt转为json
+    print("txt转换为labelme_json...\n")
+    txts_path = os.path.join(save_path, "labels")
+    txt_to_json(txts_path, images_path, jsons_path, ["corner"])
+
+    print("完成\n")
+
+def generate_car_datasets(root_dir:str,output_root_path:str,start_idx:int, blue_or_red:bool, class_model_path:str, detect_model_path:str):
     """
     处理车上日志数据，生成总数据集，roi数据，卷轴分类数据集
     :param root_dir: 日志数据根目录
@@ -303,7 +432,6 @@ def generate_car_datasets(root_dir:str,output_root_path:str,start_idx:int, blue_
     :param start_idx: 文件名起始序号，管理global images，labels 和 roi文件夹的编号，分类数据集的起始序号固定为0
     :param blue_or_red: 蓝色场地：true 红色场地：false
     :param class_model_path: 用于生成卷轴分类数据集的分类模型pt
-    :param output_class_dataset_root_path: 输出分类数据集的根目录
     :return: 无
     """
     # 判断输入参数合法性
@@ -324,15 +452,22 @@ def generate_car_datasets(root_dir:str,output_root_path:str,start_idx:int, blue_
     generate_roi_data(output_root_path)
 
     # 生成卷轴分类数据集
-    generate_11class_dataset(class_model_path, os.path.join(output_root_path,"roi_images"), output_class_dataset_root_path, 0)
+    generate_11class_dataset(class_model_path, os.path.join(output_root_path,"roi_images"), os.path.join(output_root_path,"class_dataset"), 0)
+
+    # 生成角点数据集
+    generate_corner_datasets(output_root_path, detect_model_path, 0.3)
 
 if __name__ == "__main__":
     input_dir = r"D:\A_myData\RC26-Vision\dataset\A_car\2026_3_26_"
     output_root_dir = r"D:\A_myData\RC26-Vision\dataset\A_car\2026_3_26_output"
     start_idx = 1
     yolo11cls_path = "D:\A_myData\RC26-Vision\Pytorch\pytorch\src\weights\hou_li_11cls_0113_09.pt"
-    output_cls_dataset_root_path = r"D:\A_myData\RC26-Vision\dataset\juanZhou_car2"
+    yolov5_path = r"D:\A_myData\RC26-Vision\Pytorch\yolov5-master\runs\train\角点检测2_1000_260202\corner2_v5s_1000_260202.pt"
 
-    # generate_car_datasets(input_dir, output_root_dir, start_idx, True, yolo11cls_path, output_cls_dataset_root_path)
+    generate_car_datasets(input_dir, output_root_dir, start_idx, True, yolo11cls_path, yolov5_path)
 
-    generate_11class_dataset(yolo11cls_path, r"D:\A_myData\RC26-Vision\dataset\A_car\2026_3_28\roi_images", output_cls_dataset_root_path, 1056)
+    # generate_11class_dataset(yolo11cls_path, r"D:\A_myData\RC26-Vision\dataset\A_car\2026_3_28\roi_images", output_cls_dataset_root_path, 1056)
+
+    # generate_corner_datasets(r"D:\A_myData\RC26-Vision\dataset\A_car\2026_3_28",
+    #                          r"D:\A_myData\RC26-Vision\Pytorch\yolov5-master\runs\train\角点检测2_1000_260202\corner2_v5s_1000_260202.pt",
+    #                          0.3)
