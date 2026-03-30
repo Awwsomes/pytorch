@@ -27,7 +27,7 @@ def txt_to_json(txt_path:str,image_path:str, output_json_path:str, label_idx_lis
     list_txt = [x for x in list_txt if os.path.isfile(os.path.join(txt_path,x))]
     list_txt = [x for x in list_txt if x.endswith(".txt")]
 
-    for txt in tqdm(list_txt):
+    for k, txt in enumerate(tqdm(list_txt)):
         # 拼接路径
         file_root_name = os.path.splitext(txt)[0]
         path_txt = os.path.join(txt_path,txt)
@@ -58,9 +58,16 @@ def txt_to_json(txt_path:str,image_path:str, output_json_path:str, label_idx_lis
                     list_raw_data.append(float(data))
 
                 # 判断是否为四边形
-                if len(list_raw_data) > 5:
+                if len(list_raw_data) > 6:
                     print(f"[Warn]: {txt} line {idx + 1} 's shape does not support, skip this line...")
                     continue
+
+                # 打印解析格式
+                if k == 0 and idx == 0:
+                    if len(list_raw_data) == 5:
+                        print(f"[Info]: 以 label_idx, x_center, y_center, width, height 解析 txt")
+                    elif len(list_raw_data) == 6:
+                        print(f"[Info]: 以 label_idx, x_center, y_center, width, height, conf 解析 txt")
 
                 # 判断是否有该标签
                 try:
@@ -75,12 +82,21 @@ def txt_to_json(txt_path:str,image_path:str, output_json_path:str, label_idx_lis
                 points = [point_left_up, point_right_down]
 
                 # 格式化输出数据
-                shape:dict = {
-                    "label": label_idx,
-                    "points": points,
-                    "shape_type": "rectangle",
-                    "flags": {}
-                }
+                if len(list_raw_data) == 5:
+                    shape:dict = {
+                        "label": label_idx,
+                        "points": points,
+                        "shape_type": "rectangle",
+                        "flags": {}
+                    }
+                else:
+                    shape:dict = {
+                        "label": label_idx,
+                        "points": points,
+                        "shape_type": "rectangle",
+                        "conf": list_raw_data[5],
+                        "flags": {}
+                    }
                 shapes.append(shape)
 
         # print(1)
