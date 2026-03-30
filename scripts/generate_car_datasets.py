@@ -81,6 +81,9 @@ def generate_global_dataset(root_dir:str,output_root_path:str,start_idx:int, blu
         if len(global_imgs_list) == 0 or len(txts_list) == 0:
             continue
 
+        if idx == 137:
+            print(f"idx 137: {root}")
+
         # 只处理第一个文件，因为按照格式只会有一个文件
         # 拷贝图片
         old_img_path = os.path.join(root,global_imgs_list[0])
@@ -453,18 +456,18 @@ def generate_car_datasets(root_dir:str,output_root_path:str,start_idx:int, blue_
 
     # 生成卷轴分类数据集
     generate_11class_dataset(class_model_path, os.path.join(output_root_path,"roi_images"), os.path.join(output_root_path,"class_dataset"), 0)
-
-    # 生成角点数据集
-    generate_corner_datasets(output_root_path, detect_model_path, 0.3)
+    #
+    # # 生成角点数据集
+    # generate_corner_datasets(output_root_path, detect_model_path, 0.3)
 
 if __name__ == "__main__":
-    input_dir = r"D:\A_myData\RC26-Vision\dataset\A_car\2026_3_26_"
-    output_root_dir = r"D:\A_myData\RC26-Vision\dataset\A_car\2026_3_26_output"
-    start_idx = 1
+    input_dir = r"D:\Wechat File\xwechat_files\wxid_wlxqnttgybjx12_af55\msg\file\2026-03\2026_3_28\2026_3_28"
+    output_root_dir = r"D:\A_myData\RC26-Vision\dataset\A_car\2026_3_28"
+    start_idx = 89
     yolo11cls_path = "D:\A_myData\RC26-Vision\Pytorch\pytorch\src\weights\hou_li_11cls_0113_09.pt"
     yolov5_path = r"D:\A_myData\RC26-Vision\Pytorch\yolov5-master\runs\train\角点检测2_1000_260202\corner2_v5s_1000_260202.pt"
 
-    generate_car_datasets(input_dir, output_root_dir, start_idx, True, yolo11cls_path, yolov5_path)
+    generate_car_datasets(input_dir, output_root_dir, start_idx, False, yolo11cls_path, yolov5_path)
 
     # generate_11class_dataset(yolo11cls_path, r"D:\A_myData\RC26-Vision\dataset\A_car\2026_3_28\roi_images", output_cls_dataset_root_path, 1056)
 
