@@ -132,8 +132,8 @@ def generate_imageData(image_path):
     return image_data
 
 if __name__ == "__main__":
-    input_txt_path = r"D:\A_myData\RC26-Vision\Pytorch\yolov5-master\runs\detect\exp21\labels"
-    input_image_path = r"D:\A_myData\RC26-Vision\dataset\A_car\2026_3_26\images"
-    output_json_path = r"D:\A_myData\RC26-Vision\dataset\A_car\2026_3_26\corner_jsons"
-    label_idx_list = ["corner"]
+    input_txt_path = r"D:\A_myData\RC26-Vision\dataset\corner9\labels"
+    input_image_path = r"D:\A_myData\RC26-Vision\dataset\corner9\images"
+    output_json_path = r"D:\A_myData\RC26-Vision\dataset\corner9\jsons"
+    label_idx_list = ["corner", "trash"]
     txt_to_json(input_txt_path,input_image_path,output_json_path,label_idx_list)

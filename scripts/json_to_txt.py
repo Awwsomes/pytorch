@@ -3,9 +3,8 @@ import os
 from tqdm import tqdm
 import numpy
 
-def convert_label(json_dir, save_dir, classes):
+def convert_label(json_dir, save_dir, classes: list):
     json_paths = os.listdir(json_dir)
-    classes = classes.split(',')
 
     # 循环处理所有json
     for json_path in tqdm(json_paths):
@@ -72,9 +71,9 @@ def convert_label(json_dir, save_dir, classes):
                 continue
 
 if __name__ == "__main__":
-    json_dir = r"D:\A_myData\RC26-Vision\dataset\corner4\jsons"
-    save_dir = r"D:\A_myData\RC26-Vision\dataset\corner4\txts"
-    classes = "corner"
+    json_dir = r"D:\A_myData\RC26-Vision\dataset\corner9\jsons"
+    save_dir = r"D:\A_myData\RC26-Vision\dataset\corner9\txts"
+    classes = ["corner", "trash"]
 
     if not os.path.exists(save_dir):
         os.mkdir(save_dir)
