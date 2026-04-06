@@ -241,9 +241,9 @@ def generate_roi_data(output_root_path):
     :return: 无
     """
     # 生成并写入roi图像和point_size
-    print("生成roi图像中...\n")
 
     # 读图像，读rt
+    print("读取全局图，读取label_json...")
     global_img_names_list = os.listdir(os.path.join(output_root_path, "images"))
     global_img_names_list = [x for x in global_img_names_list if
                              os.path.splitext(os.path.join(output_root_path, x))[1] in [".png", ".jpg", ".jpeg",
@@ -255,7 +255,7 @@ def generate_roi_data(output_root_path):
     tvec_list = []
     labels_list = []
     idx_list = []
-    for img_name in global_img_names_list:
+    for img_name in tqdm(global_img_names_list):
         # 获取图片名字里的序号
         idx = os.path.splitext(img_name)[0].split("_")[1]
         # print(idx)
@@ -275,41 +275,85 @@ def generate_roi_data(output_root_path):
             labels_list.append(np.stack(json_content["labels"]))
 
     # 拼接成batch
-    global_imgs_batch = np.stack(global_imgs_list, axis=0)
-    rvec_batch = np.stack(rvec_list, axis=0)
-    tvec_batch = np.stack(tvec_list, axis=0)
-    labels_batch = np.stack(labels_list, axis=0)
+    # global_imgs_batch = np.stack(global_imgs_list, axis=0)
+    # rvec_batch = np.stack(rvec_list, axis=0)
+    # tvec_batch = np.stack(tvec_list, axis=0)
+    # labels_batch = np.stack(labels_list, axis=0)
+
+    # 每十张拼成一个小batch，再拼回一个大batch
+    # full_batch_num = len(global_imgs_list) // 10
+    # last_batch_amount = len(global_imgs_list) % 10
+    #
+    # global_imgs_batch = np.zeros((full_batch_num+1, 10))
+    # rvec_batch = np.zeros((full_batch_num+1, 10, 1, 3))
+    # tvec_batch = np.zeros((full_batch_num+1, 10, 1, 3))
+    # labels_batch = np.zeros((full_batch_num+1, 10, 12))
+    # for i in range(full_batch_num+1):
+    #     if i != full_batch_num:
+    #         global_imgs_batch[i, :] = np.stack(global_imgs_list[10*i:10*(i+1)], axis=0)
+    #         rvec_batch[i, :] = np.stack(rvec_list[10*i:10*(i+1)], axis=0)
+    #         tvec_batch[i, :] = np.stack(tvec_list[10 * i:10 * (i + 1)], axis=0)
+    #         labels_batch[i, :] = np.stack(labels_list[10 * i:10 * (i + 1)], axis=0)
+    #     else:
+    #         global_imgs_batch[i, :last_batch_amount] = np.stack(global_imgs_list[10*i:10*i+last_batch_amount], axis=0)
+    #         rvec_batch[i, :last_batch_amount] = np.stack(rvec_list[10*i:10*i+last_batch_amount], axis=0)
+    #         tvec_batch[i, :last_batch_amount] = np.stack(tvec_list[10*i:10*i+last_batch_amount], axis=0)
+    #         labels_batch[i, :last_batch_amount] = np.stack(labels_list[10*i:10*i+last_batch_amount], axis=0)
     # print(rvec_batch.shape)
 
-    # 输入zb
-    roi_imgs_batch, point_size_batch = zb.process_zbuffer_with_rt_batch(global_imgs_batch, rvec_batch, tvec_batch,
+    # 每十张一个batch处理
+    full_batch_num = len(global_imgs_list) // 10
+    last_batch_amount = len(global_imgs_list) % 10
+    # print(full_batch_num)
+    # print(last_batch_amount)
+    print("生成roi图片并保存point_size...")
+    for i in tqdm(range(full_batch_num+1), desc="处理批次(10imgs/batch)"):
+        # print(f"i:{i}")
+        if i != full_batch_num:
+            # print(f"{10 * i}:{10 * (i + 1)}")
+            global_imgs_batch = np.stack(global_imgs_list[10 * i:10 * (i + 1)], axis=0)
+            rvec_batch = np.stack(rvec_list[10*i:10*(i+1)], axis=0)
+            tvec_batch = np.stack(tvec_list[10 * i:10 * (i + 1)], axis=0)
+            labels_batch = np.stack(labels_list[10 * i:10 * (i + 1)], axis=0)
+        else:
+            # print(f"{10 * i}:{10*i+last_batch_amount}")
+            global_imgs_batch = np.stack(global_imgs_list[10*i:10*i+last_batch_amount], axis=0)
+            rvec_batch = np.stack(rvec_list[10*i:10*i+last_batch_amount], axis=0)
+            tvec_batch = np.stack(tvec_list[10*i:10*i+last_batch_amount], axis=0)
+            labels_batch = np.stack(labels_list[10*i:10*i+last_batch_amount], axis=0)
+
+        # 输入zb
+        roi_imgs_batch, point_size_batch = zb.process_zbuffer_with_rt_batch(global_imgs_batch, rvec_batch, tvec_batch,
                                                                         labels_batch)
 
-    # 写入roi到roi_images文件夹
-    # 直接遍历np矩阵就是在第0维上遍历
-    print("保存roi图像中...\n")
-    for i, roi_imgs in enumerate(roi_imgs_batch):
-        roi_imgs_path = os.path.join(output_root_path, "roi_images", f"roi_{idx_list[i]}")
-        os.makedirs(roi_imgs_path, exist_ok=True)
-        for idx, roi_img in enumerate(roi_imgs):
-            roi_name = f"{idx + 1}.png"
-            roi_img_path = os.path.join(roi_imgs_path, roi_name)
-            cv2.imwrite(roi_img_path, roi_img)
+        # 写入roi到roi_images文件夹
+        # 直接遍历np矩阵就是在第0维上遍历
+        # print("保存roi图像中...\n")
+        for k, roi_imgs in enumerate(roi_imgs_batch):
+            # print(f"roi_{idx_list[10*i+k]}")
+            roi_imgs_path = os.path.join(output_root_path, "roi_images", f"roi_{idx_list[10*i+k]}")
+            os.makedirs(roi_imgs_path, exist_ok=True)
+            for idx, roi_img in enumerate(roi_imgs):
+                roi_name = f"{idx + 1}.png"
+                roi_img_path = os.path.join(roi_imgs_path, roi_name)
+                cv2.imwrite(roi_img_path, roi_img)
 
-    # 写入接收的point_size到json
-    print("写入point_size中...\n")
-    for i, point_size in enumerate(point_size_batch):
-        label_path = os.path.join(output_root_path, "labels", f"label_{idx_list[i]}.json")
-        with open(label_path, 'w') as label_file:
-            json_content = (f"{{\n"
-                            f"    \"rvec\": {rvec_list[i].T.tolist()},\n"
-                            f"    \"tvec\": {tvec_list[i].T.tolist()},\n"
-                            f"    \"labels\": {labels_list[i].tolist()},\n"
-                            f"    \"point_size\": {point_size.tolist()}\n"
-                            f"}}")
-            label_file.writelines(json_content)
+        # 写入接收的point_size到json
+        # print("写入point_size中...\n")
+        for k, point_size in enumerate(point_size_batch):
+            # print(f"label_{idx_list[10*i+k]}.json")
+            label_path = os.path.join(output_root_path, "labels", f"label_{idx_list[10*i+k]}.json")
+            with open(label_path, 'w') as label_file:
+                json_content = (f"{{\n"
+                                f"    \"rvec\": {rvec_list[10*i+k].T.tolist()},\n"
+                                f"    \"tvec\": {tvec_list[10*i+k].T.tolist()},\n"
+                                f"    \"labels\": {labels_list[10*i+k].tolist()},\n"
+                                f"    \"point_size\": {point_size.tolist()}\n"
+                                f"}}")
+                # print(json_content)
+                label_file.writelines(json_content)
 
-    print("完成.\n")
+        # print("完成.\n")
 
 def yolov5_detect_parse_opt(model_path:str, imgs_path:str, conf_thre:float=0.3):
     """
@@ -467,10 +511,12 @@ if __name__ == "__main__":
     yolo11cls_path = "D:\A_myData\RC26-Vision\Pytorch\pytorch\src\weights\hou_li_11cls_0113_09.pt"
     yolov5_path = r"D:\A_myData\RC26-Vision\Pytorch\yolov5-master\runs\train\角点检测2_1000_260202\corner2_v5s_1000_260202.pt"
 
-    generate_car_datasets(input_dir, output_root_dir, start_idx, False, yolo11cls_path, yolov5_path)
+    # generate_car_datasets(input_dir, output_root_dir, start_idx, False, yolo11cls_path, yolov5_path)
 
     # generate_11class_dataset(yolo11cls_path, r"D:\A_myData\RC26-Vision\dataset\A_car\2026_3_28\roi_images", output_cls_dataset_root_path, 1056)
 
     # generate_corner_datasets(r"D:\A_myData\RC26-Vision\dataset\A_car\2026_3_28",
     #                          r"D:\A_myData\RC26-Vision\Pytorch\yolov5-master\runs\train\角点检测2_1000_260202\corner2_v5s_1000_260202.pt",
     #                          0.3)
+
+    generate_roi_data(r"D:\A_myData\RC26-Vision\dataset\juanZhou_blue\blue\blue")
