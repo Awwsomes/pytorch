@@ -13,6 +13,9 @@
 #         len_line = len(lines)
 #         if len_line > 1:
 #             print("{} error.".format(path_txt))
+import os
+
+import numpy as np
 
 # import torch
 #
@@ -115,3 +118,81 @@
 #     save=False,
 #     project=r"D:\A_myData\RC26-Vision\Pytorch\yolov5-master\runs\detect"
 # )
+#
+# for i in range(0, -2, -1):
+#     print(i)
+
+# rvec = [1.1, 1.2, 1.3]
+# print(rvec)
+# json_content = (f"{{\n"
+#                 f"    \"rvec\": {rvec}\n"
+#                 f"}}")
+# print(json_content)
+# rvec1 = np.stack(rvec, axis=0).reshape(3,1)
+# print(rvec)
+# print(rvec1)
+# json_content = (f"{{\n"
+#                 f"    \"rvec\": {rvec}\n"
+#                 f"}}")
+# print(json_content)
+
+# for i in range(1,32):
+#     print(i)
+# list1 = [1,2,3,4,5,6,7,8,9]
+# [print("warn") if x not in range(1,33) else print(end="") for x in list1]
+
+# if list1 not in range(1,33):
+#     print("warn")
+
+# path = r"D:\A_myData\RC26-Vision\dataset\A_car\123"
+# os.mkdir(os.path.join(path, "1"))
+
+# import os
+# print(os.listdir(r"D:\A_myData\RC26-Vision\dataset\A_car\raw_data\2026_3_28\22\imageRT\imagert1"))
+
+# import os
+# import numpy as np
+# np.set_printoptions(precision=4, suppress=True, floatmode='fixed')
+# import cv2
+# from scipy.spatial.transform import Rotation as R
+#
+# root_path = r"D:\A_myData\RC26-Vision\Pytorch\pytorch\scripts\test_file\imageRT"
+# for i in range(1,21,2):
+#     imagert1_path = os.path.join(root_path, f"imagert{i}")
+#     imagert2_path = os.path.join(root_path, f"imagert{i+1}")
+#     for idx in range(2):
+#         # print(f"idx: {i+idx}")
+#         before_opt_path = os.path.join(imagert1_path, f"{idx}", "rt.txt")
+#         after_opt_path = os.path.join(imagert2_path, f"{idx}", "rt.txt")
+#         # print(before_opt_path)
+#         # print(after_opt_path)
+#         with open(before_opt_path, 'r') as before_file, \
+#              open(after_opt_path, 'r') as after_file:
+#             before_opt_rvec = np.array(before_file.readline().strip().split(", "))
+#             before_opt_tvec = np.array(before_file.readline().strip().split(", "))
+#             after_opt_rvec = np.array(after_file.readline().strip().split(", "))
+#             after_opt_tvec = np.array(after_file.readline().strip().split(", "))
+#
+#         # before_R, _ = cv2.Rodrigues(before_opt_rvec)
+#         rot = R.from_rotvec(before_opt_rvec)
+#         before_R = rot.as_matrix()
+#         before_RT = np.eye(4, dtype=np.float64)
+#         before_RT[:3, :3] = before_R
+#         before_RT[:3, 3] = before_opt_tvec
+#         # print(before_RT)
+#
+#         rot = R.from_rotvec(after_opt_rvec)
+#         after_R = rot.as_matrix()
+#         after_RT = np.eye(4, dtype=np.float64)
+#         after_RT[:3, :3] = after_R
+#         after_RT[:3, 3] = after_opt_tvec
+#         # print(after_RT)
+#
+#         #optimize_matrix = after_RT * np.linalg.inv(before_RT)
+#         optimize_matrix = after_RT @ np.linalg.inv(before_RT)
+#         # print(optimize_matrix)
+#         # print(before_opt_rvec)
+#         # print(after_opt_rvec)
+#
+#         print(f"第{i + idx}组：\n"
+#               f"{optimize_matrix.astype(np.float64)}")
