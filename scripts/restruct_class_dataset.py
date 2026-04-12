@@ -7,13 +7,13 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QTabWidget, QWidget,
 from PyQt5.QtGui import QPixmap, QFont, QPalette
 from PyQt5.QtCore import Qt, QSize, QObject, QEvent, QRect, QPoint
 
-
 class ImageLabel(QLabel):
-    """自定义图片标签，支持选中状态"""
+    """自定义图片标签，"""
 
-    def __init__(self, image_path):
+    def __init__(self, image_path, txt_dir=None):
         super().__init__()
         self.image_path = image_path
+        self.txt_dir = txt_dir
         self.is_selected = False
         self.setAlignment(Qt.AlignCenter)
         self.update_style()
@@ -22,12 +22,61 @@ class ImageLabel(QLabel):
         self.update_display()
 
     def update_display(self, size=200):
+        # 清空现有布局（如果是第二次调用，防止重叠）
+        if self.layout():
+            QWidget().setLayout(self.layout())
+
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(5, 5, 5, 5)
+        main_layout.setSpacing(2)
+
         if not self.pixmap_original.isNull():
             scaled_pixmap = self.pixmap_original.scaled(
                 size, size, Qt.KeepAspectRatio, Qt.SmoothTransformation
             )
-            self.setPixmap(scaled_pixmap)
-            self.setFixedSize(scaled_pixmap.size() + QSize(20, 20))
+            img_label = QLabel()
+            img_label.setPixmap(scaled_pixmap)
+            img_label.setAlignment(Qt.AlignCenter)
+            main_layout.addWidget(img_label, 0, Qt.AlignCenter)
+
+            # 【新增】读取并显示 Top2 置信度
+            if self.txt_dir:
+                conf_text = self._load_confidence()
+                if conf_text:
+                    conf_label = QLabel(conf_text)
+                    conf_label.setAlignment(Qt.AlignCenter)
+                    conf_label.setStyleSheet(
+                        "font-size: 10px; color: #555; background-color: rgba(255,255,255,180); padding: 1px;")
+                    conf_label.setWordWrap(True)
+                    main_layout.addWidget(conf_label, 0, Qt.AlignCenter)
+
+            self.setFixedSize(QSize(size, size) + QSize(20, 60))  # 增加高度放文字
+
+    # 【新增】解析 TXT 的辅助函数
+    def _load_confidence(self):
+        if not self.txt_dir: return None
+        base_name = os.path.splitext(os.path.basename(self.image_path))[0]
+        txt_path = os.path.join(self.txt_dir, base_name + ".txt")
+
+        if not os.path.exists(txt_path):
+            return None
+
+        try:
+            with open(txt_path, 'r') as f:
+                lines = [l.strip() for l in f.readlines() if l.strip()]
+
+            top2 = []
+            # 取前2行解析
+            for i in range(min(2, len(lines))):
+                parts = lines[i].split()
+                if len(parts) >= 2:
+                    conf = float(parts[0])
+                    cls_name = int(parts[1])
+                    top2.append(f"{cls_name}: {conf:.2f}")
+
+            return "\n".join(top2)
+        except Exception:
+            return None
 
     def update_style(self):
         if self.is_selected:
@@ -43,7 +92,6 @@ class ImageLabel(QLabel):
     def leaveEvent(self, event):
         self.update_style()
         super().leaveEvent(event)
-
 
 class GridContainer(QWidget):
     """专门的网格容器，处理拖拽框选逻辑"""
@@ -89,7 +137,6 @@ class GridContainer(QWidget):
                             img_label.update_style()
                             self.main_window.selected_images.add(img_label)
 
-
 class GlobalFilter(QObject):
     """全局过滤器：处理 Ctrl+滚轮"""
 
@@ -106,10 +153,11 @@ class GlobalFilter(QObject):
 
 
 class DatasetSorter(QMainWindow):
-    def __init__(self, root_dir, class_names):
+    def __init__(self, root_dir, class_names, txt_dir):
         super().__init__()
         self.root_dir = root_dir
         self.class_names = class_names
+        self.txt_dir = txt_dir  # 【新增】保存路径
 
         self.prefix_key = None
         self.grid_columns = 4
@@ -117,11 +165,17 @@ class DatasetSorter(QMainWindow):
         self.tabs_data = {}
         self.selected_images = set()
 
+        # 【新增】撤回功能相关
+        self.operation_history = []
+        self.max_history = 20  # 最多保存20次操作
+        # 【新增】重做历史
+        self.redo_history = []
+
         self.init_ui()
         self.load_data()
 
     def init_ui(self):
-        self.setWindowTitle("AI 数据集整理工具 - 框选版")
+        self.setWindowTitle("分类数据集整理工具")
         self.setGeometry(100, 100, 1400, 900)
 
         central_widget = QWidget()
@@ -206,7 +260,8 @@ class DatasetSorter(QMainWindow):
         for i, filename in enumerate(files):
             full_path = os.path.join(folder_path, filename)
             try:
-                img_widget = ImageLabel(full_path)
+                # 【修改】传入 txt_dir 和 class_names
+                img_widget = ImageLabel(full_path, self.txt_dir)
                 img_widget.update_display(self.thumb_size)
 
                 item_container = QWidget()
@@ -241,13 +296,88 @@ class DatasetSorter(QMainWindow):
             self.status_label.setText(f"列数: {self.grid_columns}")
             self.status_label.setStyleSheet("color: #666; padding: 0 10px;")
 
+    def undo_operation(self):
+        if not self.operation_history:
+            self.status_label.setText("⚠️ 没有可撤回的操作")
+            self.status_label.setStyleSheet("color: #FFA500; padding: 0 10px;")
+            return
+
+        # 取出最后一次操作
+        last_operation = self.operation_history.pop()
+        # 【新增】存入重做历史
+        self.redo_history.append(last_operation)
+
+        undo_count = 0
+
+        # 逆向移动：从目标路径移回源路径
+        for src_path, dst_path in reversed(last_operation):
+            if os.path.exists(dst_path):
+                try:
+                    # 确保源目录存在（防止文件夹被删）
+                    src_dir = os.path.dirname(src_path)
+                    if not os.path.exists(src_dir):
+                        os.makedirs(src_dir)
+
+                    shutil.move(dst_path, src_path)
+                    undo_count += 1
+                except Exception as e:
+                    print(f"撤回失败: {e}")
+
+        # 刷新当前页面
+        current_idx = self.tab_widget.currentIndex()
+        self.refresh_tab(current_idx)
+
+        self.status_label.setText(f"↩️ 已撤回 {undo_count} 张图片")
+        self.status_label.setStyleSheet("color: #1976d2; padding: 0 10px;")
+
+    def redo_operation(self):
+        if not self.redo_history:
+            self.status_label.setText("⚠️ 没有可恢复的操作")
+            self.status_label.setStyleSheet("color: #FFA500; padding: 0 10px;")
+            return
+
+        # 取出最后一次撤回的操作
+        last_operation = self.redo_history.pop()
+        # 放回撤回历史
+        self.operation_history.append(last_operation)
+
+        redo_count = 0
+        # 重新执行移动：从源路径移到目标路径
+        for src_path, dst_path in last_operation:
+            if os.path.exists(src_path):
+                try:
+                    dst_dir = os.path.dirname(dst_path)
+                    if not os.path.exists(dst_dir):
+                        os.makedirs(dst_dir)
+
+                    shutil.move(src_path, dst_path)
+                    redo_count += 1
+                except Exception as e:
+                    print(f"恢复失败: {e}")
+
+        # 刷新当前页面
+        current_idx = self.tab_widget.currentIndex()
+        self.refresh_tab(current_idx)
+
+        self.status_label.setText(f"↪️ 已恢复 {redo_count} 张图片")
+        self.status_label.setStyleSheet("color: #1976d2; padding: 0 10px;")
+
     def keyPressEvent(self, event):
         key = event.key()
+
+        # 【新增】Ctrl+Z 撤回
+        if key == Qt.Key_Z and event.modifiers() == Qt.ControlModifier:
+            self.undo_operation()
+            return
+
+        # 【新增】Ctrl+Y 恢复（重做）
+        if key == Qt.Key_Y and event.modifiers() == Qt.ControlModifier:
+            self.redo_operation()
+            return
 
         row1_keys = {Qt.Key_Q, Qt.Key_W, Qt.Key_E, Qt.Key_R, Qt.Key_T, Qt.Key_Y, Qt.Key_U, Qt.Key_I, Qt.Key_O, Qt.Key_P}
         row2_keys = {Qt.Key_A, Qt.Key_S, Qt.Key_D, Qt.Key_F, Qt.Key_G, Qt.Key_H, Qt.Key_J, Qt.Key_K, Qt.Key_L}
         row3_keys = {Qt.Key_Z, Qt.Key_X, Qt.Key_C, Qt.Key_V, Qt.Key_B, Qt.Key_N, Qt.Key_M}
-
         if key in row1_keys:
             self.prefix_key = 10
             self.info_label.setText("<b>当前模式：第一行字母</b> (对应类别 10-19) - 请按数字键 0-9")
@@ -263,7 +393,6 @@ class DatasetSorter(QMainWindow):
 
         if Qt.Key_0 <= key <= Qt.Key_9:
             num = key - Qt.Key_0
-            target_idx = -1
 
             if self.prefix_key is None:
                 target_idx = num
@@ -316,6 +445,9 @@ class DatasetSorter(QMainWindow):
         target_dir = os.path.join(self.root_dir, target_class)
         success_count = 0
 
+        # 【新增】记录本次操作的所有文件路径
+        current_operation = []
+
         for img_widget in images_to_move:
             src_path = img_widget.image_path
             if not os.path.exists(src_path):
@@ -331,6 +463,16 @@ class DatasetSorter(QMainWindow):
 
             shutil.move(src_path, dst_path)
             success_count += 1
+            # 【新增】记录源路径和最终的目标路径
+            current_operation.append((src_path, dst_path))
+
+        # 【新增】将本次成功的操作存入历史，并清空重做栈
+        if current_operation:
+            self.operation_history.append(current_operation)
+            self.redo_history.clear()  # 新增：有新操作就不能重做之前的了
+            # 限制历史长度
+            if len(self.operation_history) > self.max_history:
+                self.operation_history.pop(0)
 
         self.refresh_tab(current_idx)
 
@@ -346,8 +488,13 @@ def main():
     if not root_dir:
         return
 
+    # 【新增】选择 TXT 标签目录（可跳过）
+    txt_dir = QFileDialog.getExistingDirectory(None, "请选择 TXT 标签目录（点击取消则不展示置信度）")
+    if not txt_dir:
+        txt_dir = None
+
     subfolders = [f.name for f in os.scandir(root_dir) if f.is_dir()]
-    subfolders.sort()
+    subfolders.sort(key=int)
     default_classes = ", ".join(subfolders) if subfolders else "class_1, class_2, class_3"
 
     text, ok = QInputDialog.getText(None, "设置类别", "请输入类别名称（按顺序，逗号分隔）：", text=default_classes)
@@ -356,14 +503,13 @@ def main():
 
     class_names = [x.strip() for x in text.split(',')]
 
-    window = DatasetSorter(root_dir, class_names)
+    window = DatasetSorter(root_dir, class_names, txt_dir)
 
     global_filter = GlobalFilter(window)
     app.installEventFilter(global_filter)
 
     window.show()
     sys.exit(app.exec_())
-
 
 if __name__ == "__main__":
     main()
