@@ -117,42 +117,34 @@ def convert_train_dataset_to_class_dataset(origin_root, new_root, class_names):
     print(f"📁 新分类数据集路径：{new_root}")
     print("-" * 60)
 
-def classify_dataset_by_label(origin_root, new_root, class_names):
+def classify_dataset_by_cls_predict_label(images_path:str, labels_path:str, new_root:str, class_names:list[str]) -> None:
     """
-    根据标签txt第一行的数字索引，映射到类别名列表，将图片分类到对应类别名文件夹
-    :param origin_root: 原数据集根目录（内部必须有images和labels子文件夹）
+    根据标签txt第一行的类别名，将图片分类到对应类别名文件夹
+    Note：txt第一行直接就是类别名称，而非类别序号
+    Note：class_names列表仅用于检查txt中的类别是否存在于其中，不用作映射
+    :param images_path: 图片路径
+    :param labels_path: 标签路径
     :param new_root: 新分类数据集的输出根目录
     :param class_names: 类别名列表
     """
     # 1. 定义关键路径和基础配置，检查输入合法性
-    origin_images = os.path.join(origin_root, "images")
-    origin_labels = os.path.join(origin_root, "labels")
     image_suffixes = (".jpg", ".jpeg", ".png", ".bmp", ".webp")  # 兼容的图片后缀
-    max_index = len(class_names) - 1  # 最大有效标签索引（类别数-1）
 
     # 输入合法性检查
     if not class_names:
-        print(f"❌ 错误：类别名列表不能为空，请输入有效类别名！")
-        return
-    if not os.path.exists(origin_root):
-        print(f"❌ 错误：原数据集根目录不存在 -> {origin_root}")
-        return
-    if not os.path.exists(origin_images):
-        print(f"❌ 错误：原数据集images文件夹不存在 -> {origin_images}")
-        return
-    if not os.path.exists(origin_labels):
-        print(f"❌ 错误：原数据集labels文件夹不存在 -> {origin_labels}")
-        return
+        raise ValueError(f"❌ 错误：类别名列表不能为空，请输入有效类别名！")
+    if not os.path.exists(images_path):
+        raise FileNotFoundError(f"❌ 错误：图片路径不存在: {images_path}")
+    if not os.path.exists(labels_path):
+        raise FileNotFoundError(f"❌ 错误：标签路径不存在: {labels_path}")
 
     # 2. 动态创建新数据集的类别文件夹（以类别名命名，exist_ok=True避免重复创建）
     for cls_name in class_names:
         cls_dir = os.path.join(new_root, cls_name)
         os.makedirs(cls_dir, exist_ok=True)
     # 打印类别映射关系（索引:类别名），方便核对
-    class_mapping = {i: name for i, name in enumerate(class_names)}
     print(f"✅ 新数据集文件夹已创建/存在 -> {new_root}")
-    print(f"✅ 类别映射关系（标签第一行数字→文件夹名）：{class_mapping}")
-    print(f"✅ 兼容图片格式：{image_suffixes}\n")
+    print(f"✅ 处理类别：{class_names}")
 
     # 3. 初始化统计变量（动态生成，键为类别名）
     total_processed = 0  # 总成功处理数
@@ -161,9 +153,9 @@ def classify_dataset_by_label(origin_root, new_root, class_names):
     error_files = []  # 错误文件记录（方便后续排查）
 
     # 4. 遍历所有标签txt文件（核心逻辑）
-    txt_files = glob(os.path.join(origin_labels, "*.txt"))
+    txt_files = glob(os.path.join(labels_path, "*.txt"))
     if not txt_files:
-        print(f"⚠️  警告：labels文件夹下无txt标签文件 -> {origin_labels}")
+        print(f"⚠️  警告：labels文件夹下无txt标签文件 -> {labels_path}")
         return
     print(f"开始处理，共发现 {len(txt_files)} 个标签文件...\n")
 
@@ -181,16 +173,10 @@ def classify_dataset_by_label(origin_root, new_root, class_names):
                 print(f"{label} 不在class_names内：{txt_name}")
                 continue
 
-            # # 检查索引是否在有效范围（0 ~ 类别数-1）
-            # if label_index < 0 or label_index > max_index:
-            #     raise ValueError(f"标签索引超出有效范围[0, {max_index}]")
-            # # 映射到实际类别名
-            # target_cls = class_names[label_index]
-
             # 查找同名图片（兼容所有指定后缀，按顺序匹配）
             image_path = None
             for suffix in image_suffixes:
-                temp_path = os.path.join(origin_images, txt_name + suffix)
+                temp_path = os.path.join(images_path, txt_name + suffix)
                 if os.path.exists(temp_path):
                     image_path = temp_path
                     break
@@ -235,19 +221,3 @@ def classify_dataset_by_label(origin_root, new_root, class_names):
             print(f"⚠️  失败记录共{len(error_files)}条，以上仅显示前10条")
     print(f"📁 新分类数据集路径：{new_root}")
     print("-" * 60)
-
-if __name__ == "__main__":
-    # -------------------------- 请在这里修改你的配置 --------------------------
-    # 1. 原数据集根目录：内部必须有「images」和「labels」两个同级子文件夹
-    ORIGIN_DATASET_ROOT = r"D:\A_myData\dataset\test_map50_cla_"  # Windows路径用r前缀，Linux/Mac用"/home/user/xxx"
-    # 2. 新分类数据集输出目录：脚本自动创建，无需手动建
-    NEW_DATASET_ROOT = r"D:\A_myData\dataset\test_map50_cla_2"
-    # 3. 核心：类别名列表（标签第一行数字为索引，对应此列表）
-    # 示例1：3类别 ['猫', '狗', '其他'] → 标签0→猫，1→狗，2→其他
-    # 示例2：4类别 ['car', 'bike', 'person', 'bus'] → 标签0→car，1→bike，2→person，3→bus
-    # 示例3：原固定类别 ['0', '1', '2'] → 还原成最初的数字文件夹
-    CLASS_NAMES = ["0","1","2"]
-    # -------------------------------------------------------------------------
-
-    # 执行分类
-    classify_dataset_by_label(ORIGIN_DATASET_ROOT, NEW_DATASET_ROOT, CLASS_NAMES)
