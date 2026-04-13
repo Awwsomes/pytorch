@@ -14,6 +14,7 @@
 #         if len_line > 1:
 #             print("{} error.".format(path_txt))
 import os
+import shutil
 
 import numpy as np
 
@@ -149,6 +150,16 @@ import numpy as np
 
 # import os
 # print(os.listdir(r"D:\A_myData\RC26-Vision\dataset\A_car\raw_data\2026_3_28\22\imageRT\imagert1"))
+
+path = r"/home/awwsome/图片/摄像头/old"
+new_path = r"/home/awwsome/图片"
+list_img = os.listdir(path)
+for img in list_img:
+    img_name = img.split(".")[0]
+    new_img_name = "d" + img_name + ".png"
+    old_img_path = os.path.join(path, img)
+    new_img_path = os.path.join(new_path, new_img_name)
+    shutil.copy2(old_img_path, new_img_path)
 
 # import os
 # import numpy as np
