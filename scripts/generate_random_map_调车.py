@@ -2,55 +2,44 @@ import os
 import random
 import json
 
-def generate_random_map_list() -> list[int]:
-    # 设定已有方块和其数量
-    r2_true_1 = [2, 3, 4, 5, 6]
-    r2_true_2 = [7, 8, 9, 10, 11]
-    r2_true_3 = [12, 13, 14, 15, 16]
-    r2_true_amount = {
-        1: 2,
-        2: 1,
-        3: 1
-    }
+def generate_random_map_list(block_list=None) -> list[int]:
 
-    r2_false_1 = [17, 18, 19, 20, 21]
-    r2_false_2 = [22, 23, 24, 25, 26]
-    r2_false_3 = [27, 28, 29, 30, 31]
-    r2_false_amount = {
-        1: 1,
-        2: 1,
-        3: 1
-    }
+    if block_list is None:
+        block_list = [
+            [1],
+            [2, 3, 4, 5, 6],
+            [2, 3, 4, 5, 6],
+            [7, 8, 9, 10, 11],
+            [12, 13, 14, 15, 16],
+            [17, 18, 19, 20, 21],
+            [22, 23, 24, 25, 26],
+            [27, 28, 29, 30, 31],
+            [32],
+            [32],
+            [32],
+            [32]
+        ]
+    elif len(block_list) == 0:
+        raise ValueError("generate_random_map_list: 输入方块列表为空")
+    elif [True if len(x) == 0 else False for x in block_list]:
+        raise ValueError("generate_random_map_list: 输入方块列表中有方块无类别")
 
-    total_block = [[1],
-                   r2_true_1,
-                   r2_true_1,
-                   r2_true_2,
-                   r2_true_3,
-                   r2_false_1,
-                   r2_false_2,
-                   r2_false_3,
-                   [32],
-                   [32],
-                   [32],
-                   [32]]
-
-    output_list = [random.sample(x, 1)[0] for x in total_block]
+    output_list = [random.sample(x, 1)[0] for x in block_list]
     random.shuffle(output_list)
-
     return output_list
 
-def calculate_difference(list1, list2, weights=(0.25, 0.35, 0.4)):
+def calculate_difference(list1, list2, weights=(0.25, 0.35, 0.4)) -> dict:
     """
     计算两个12位置类别列表的差异值
 
-    参数:
-        list1: 第一个列表，长度12，元素为1-32的整数（32代表空）
-        list2: 第二个列表，长度12，元素为1-32的整数（32代表空）
-        weights: 三个差异值的权重，默认(1/3, 1/3, 1/3)
-
-    返回:
-        dict: 包含三个归一化差异值和总差异值的字典
+    :param list1: 第一个列表，长度12，元素为1-32的整数（32代表空）
+    :param list2: 第二个列表，长度12，元素为1-32的整数（32代表空）
+    :param weights: 三个差异值的权重，默认(1/3, 1/3, 1/3)
+    :return: 包含三个归一化差异值和总差异值的字典,键：
+            "空/非空状态差异值": float,
+            "类别差异值": float,
+            "相同类别位置差异值": float,
+            "总差异值": float
     """
     # -------------------------- 输入验证 --------------------------
     if len(list1) != 12 or len(list2) != 12:
@@ -58,6 +47,8 @@ def calculate_difference(list1, list2, weights=(0.25, 0.35, 0.4)):
     for lst in [list1, list2]:
         if not all(isinstance(x, int) and 1 <= x <= 32 for x in lst):
             raise ValueError("列表元素必须是1-32之间的整数")
+    if sum(weights) != 1:
+        raise ValueError("权重加和不为1")
 
     # -------------------------- 1. 空/非空状态差异值 (d1) --------------------------
     d1 = 0
@@ -151,12 +142,6 @@ def calculate_difference(list1, list2, weights=(0.25, 0.35, 0.4)):
 
     # -------------------------- 加权求和 --------------------------
     w1, w2, w3 = weights
-    # 确保权重和为1
-    total_weight = w1 + w2 + w3
-    w1 /= total_weight
-    w2 /= total_weight
-    w3 /= total_weight
-
     total_diff = w1 * norm_d1 + w2 * norm_d2 + w3 * norm_d3
 
     # -------------------------- 返回结果 --------------------------
@@ -217,31 +202,54 @@ def write_to_json(input_map_list:list[dict], output_json_path:str) -> None:
               f"{ori_data}")
 
 if __name__ == "__main__":
-    save_json_path = r"D:\A_myData\RC26-Vision\Pytorch\pytorch\scripts\test_file\output\test.json"
+
+    # 设置种子
     random.seed(234645)
+
+    # 保存地图的json路径
+    save_json_path = r"D:\A_myData\RC26-Vision\Pytorch\pytorch\scripts\test_file\output\test.json"
+
+    # 初始地图
     # origin_map = generate__map_list()
     # origin_map = [1,7,2,12,3,17,22,27,32,32,32,32]
     origin_map = [32, 32, 32, 28, 13, 26, 32, 5, 4, 10, 19, 1]
-    difference_thres = 70
-    # best_output:list[list[int]] = [origin_map]
+
+    # 差异值阈值，差异值越大，地图差的越多
+    difference_thres = 40
+
+    # 设置迭代次数
+    optimize_times = 10000
+
+    # 各差异值权重
+    empty_diff, label_diff, same_label_position_diff = 0.25, 0.35, 0.4
+
+    # 初始化输出地图
     best_output: list[dict] = [{
         "map": origin_map,
         "avg_diff": 0
     }]
     # print(best_output)
+
+    # 读取之前生成过的地图
     [best_output.append(x) for x in read_from_json(save_json_path)]
 
+    # 迭代生成地图
     print(f"origin map:{origin_map}")
-    for i in range(10000):
+    for i in range(optimize_times):
+
+        # 生成随机地图
         temp_map = generate_random_map_list()
         is_like = False
         difference_sum = 0
+
+        # 遍历best_output的所有地图，计算和其他best之间的差异值
         for best in best_output:
+
             # 计算和其他best之间的difference，要大于一个阈值
-            difference = calculate_difference(temp_map, best["map"])
+            difference = calculate_difference(temp_map, best["map"], (empty_diff, label_diff, same_label_position_diff))
             difference_sum += difference["总差异值"]
             # print(difference["总差异值"])
-            if difference["总差异值"] < 40:
+            if difference["总差异值"] < difference_thres:
                 is_like = True
                 break
         if not is_like:
@@ -251,6 +259,7 @@ if __name__ == "__main__":
                 "avg_diff": difference_sum / total
             })
     best_output.pop(0)
+
     # 按avg_diff由大到小排序
     def sort_best_output(map_dict: dict):
         return map_dict["avg_diff"]
