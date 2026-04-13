@@ -1,5 +1,7 @@
 import os
 import random
+import re
+
 
 def generate_random_map():
     """
@@ -8,15 +10,20 @@ def generate_random_map():
     """
     # 1. 按数量规则构造基础数字列表
     zeros = [0] * 4  # 4个0
-    nums_1_31 = random.sample(range(1, 32), 8)  # 2-16中随机选4个不重复数
+    ones = [1] * 3
+
+    nums_2_16 = random.sample(range(1, 17), 4)  # 2-16中随机选4个不重复数
+
+    nums_17_31 = random.sample(range(17, 32), 1)  # 2-16中随机选4个不重复数
 
     # 2. 合并所有数字并随机打乱（保证分布随机）
-    total_nums = zeros + nums_1_31
+    total_nums = zeros + ones + nums_2_16 + nums_17_31
     random.shuffle(total_nums)  # 打乱顺序，确保每次结果不同
 
     return total_nums
 
-def generate_specific_map():
+
+def generate_specific_map(input_num:list):
     """
     生成部分指定类别的地图(非标准规则地图)
     规则：0(4个)、1-31(8个)，总计12个
@@ -27,17 +34,20 @@ def generate_specific_map():
     #
     # # 2. 合并所有数字并随机打乱（保证分布随机）
     # total_nums = zeros + nums_1_31
-    total_nums = [0,0,0,0,1,1,4,5,7,24,25,28]
-    random.shuffle(total_nums)  # 打乱顺序，确保每次结果不同
+    if len(input_num) == 1:
+        total_nums = [input_num[0] for x in range(12)]
+    else:
+        total_nums = input_num
+    # total_nums = [3, 1, 0, 7, 1, 0, 21, 15, 12, 0, 10, 0]
+    # random.shuffle(total_nums)  # 打乱顺序，确保每次结果不同
 
     return total_nums
 
 def generate_urdf_file(output_file_rootname, output_path=None, n=1, launch_path=None, txt_path=None):
-
     launch_template = '''<launch>
       <param name="arena_description" 
             command="$(find xacro)/xacro '$(find zwei)/{path}/{name}.urdf'"/>
-      
+
       <include file="$(find gazebo_ros)/launch/empty_world.launch">
         <arg name="world_name" value="$(find zwei)/worlds/competition.world"/>
         <arg name="paused" value="false"/>
@@ -46,27 +56,29 @@ def generate_urdf_file(output_file_rootname, output_path=None, n=1, launch_path=
         <arg name="headless" value="false"/>
         <arg name="debug" value="false"/>
       </include>
-      
+
       <node name="spawn_arena" pkg="gazebo_ros" type="spawn_model"
             args="-urdf -param arena_description -model competition_area -x 0 -y 0 -z 0"
             respawn="false" output="screen"/>
 
       <node name="spawn_robot" pkg="gazebo_ros" type="spawn_model" 
-            
+
             args="-urdf -param robot_description -model mbot -x 4.6 -y 0.4 -z 2 -Y 1.570796"
             respawn="false" output="screen"/> 
       <arg name="model" default="$(find wpr_simulation)/models/wpb_home.model"/>
       <param name="robot_description" command="$(find xacro)/xacro $(arg model)" />
       <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
       <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" /> 
-      
+
     </launch>'''
-    
-    
-    
+
     # ====================== 用于存储已生成的随机数序列 ======================
     generated_sequences = set()
-    
+
+    z_options = [0, 1.5707963267949, -1.5707963267949, 3.14159265358979]
+
+    links_to_replace = {25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36}
+
     for file_index in range(1, n + 1):
         # ====================== 1. 确定输出文件完整路径 ======================
         if output_path:
@@ -81,22 +93,23 @@ def generate_urdf_file(output_file_rootname, output_path=None, n=1, launch_path=
         # ====================== 2. 生成不重复的12个随机数序列 ======================
         while True:
             # random_numbers = tuple(random.randint(0, 31) for _ in range(12))
-            random_list = tuple(generate_specific_map())
+            # random_list = tuple(generate_specific_map())
+            random_list = tuple(generate_specific_map([file_index]))
 
             if random_list not in generated_sequences:
                 generated_sequences.add(random_list)
                 break
-        
+
         print(f"第{file_index}组随机数：{random_list}")
 
         txt_output_path = os.path.join(txt_path, f"{output_file_rootname}{file_index}.txt")
 
         random_numbers_str = " ".join(str(num) for num in random_list)
-        
+
         with open(txt_output_path, "w", encoding="utf-8") as f:
             f.write(random_numbers_str)
 
-    # ====================== 1. 定义基础URDF内容 ======================
+        # ====================== 1. 定义基础URDF内容 ======================
         base_urdf_content = '''<?xml version="1.0" encoding="utf-8"?>
 
     <robot
@@ -121,13 +134,13 @@ def generate_urdf_file(output_file_rootname, output_path=None, n=1, launch_path=
           <origin
             xyz="0 0 0"
             rpy="0 0 0" />
-          
+
         </visual>
         <collision>
           <origin
             xyz="0 0 0"
             rpy="0 0 0" />
-        
+
         </collision>
       </link>
       <link
@@ -154,7 +167,7 @@ def generate_urdf_file(output_file_rootname, output_path=None, n=1, launch_path=
             <mesh
               filename="package://zwei/meshes/Link1.STL" />
           </geometry>
-          
+
         </visual>
         <collision>
           <origin
@@ -203,7 +216,7 @@ def generate_urdf_file(output_file_rootname, output_path=None, n=1, launch_path=
             <mesh
               filename="package://zwei/meshes/Link2.STL" />
           </geometry>
-          
+
         </visual>
         <collision>
           <origin
@@ -252,7 +265,7 @@ def generate_urdf_file(output_file_rootname, output_path=None, n=1, launch_path=
             <mesh
               filename="package://zwei/meshes/Link3.STL" />
           </geometry>
-          
+
         </visual>
         <collision>
           <origin
@@ -277,7 +290,7 @@ def generate_urdf_file(output_file_rootname, output_path=None, n=1, launch_path=
         <axis
           xyz="0 0 0" />
       </joint>
-      
+
       <link
         name="Link4">
         <inertial>
@@ -302,7 +315,7 @@ def generate_urdf_file(output_file_rootname, output_path=None, n=1, launch_path=
             <mesh
               filename="package://zwei/meshes/Link4.STL" />
           </geometry>
-          
+
         </visual>
         <collision>
           <origin
@@ -327,7 +340,7 @@ def generate_urdf_file(output_file_rootname, output_path=None, n=1, launch_path=
         <axis
           xyz="0 0 0" />
       </joint>
-      
+
       <link
         name="Link5">
         <inertial>
@@ -352,7 +365,7 @@ def generate_urdf_file(output_file_rootname, output_path=None, n=1, launch_path=
             <mesh
               filename="package://zwei/meshes/Link5.STL" />
           </geometry>
-          
+
         </visual>
         <collision>
           <origin
@@ -401,7 +414,7 @@ def generate_urdf_file(output_file_rootname, output_path=None, n=1, launch_path=
             <mesh
               filename="package://zwei/meshes/Link6.STL" />
           </geometry>
-          
+
         </visual>
         <collision>
           <origin
@@ -450,7 +463,7 @@ def generate_urdf_file(output_file_rootname, output_path=None, n=1, launch_path=
             <mesh
               filename="package://zwei/meshes/Link7.STL" />
           </geometry>
-          
+
         </visual>
         <collision>
           <origin
@@ -499,7 +512,7 @@ def generate_urdf_file(output_file_rootname, output_path=None, n=1, launch_path=
             <mesh
               filename="package://zwei/meshes/Link8.STL" />
           </geometry>
-          
+
         </visual>
         <collision>
           <origin
@@ -548,7 +561,7 @@ def generate_urdf_file(output_file_rootname, output_path=None, n=1, launch_path=
             <mesh
               filename="package://zwei/meshes/Link9.STL" />
           </geometry>
-          
+
         </visual>
         <collision>
           <origin
@@ -597,7 +610,7 @@ def generate_urdf_file(output_file_rootname, output_path=None, n=1, launch_path=
             <mesh
               filename="package://zwei/meshes/Link10.STL" />
           </geometry>
-          
+
         </visual>
         <collision>
           <origin
@@ -695,7 +708,7 @@ def generate_urdf_file(output_file_rootname, output_path=None, n=1, launch_path=
             <mesh
               filename="package://zwei/meshes/Link12.STL" />
           </geometry>
-          
+
         </visual>
         <collision>
           <origin
@@ -794,7 +807,7 @@ def generate_urdf_file(output_file_rootname, output_path=None, n=1, launch_path=
             <mesh
               filename="package://zwei/meshes/Link14.STL" />
           </geometry>
-        
+
         </visual>
         <collision>
           <origin
@@ -843,7 +856,7 @@ def generate_urdf_file(output_file_rootname, output_path=None, n=1, launch_path=
             <mesh
               filename="package://zwei/meshes/Link15.STL" />
           </geometry>
-        
+
         </visual>
         <collision>
           <origin
@@ -892,7 +905,7 @@ def generate_urdf_file(output_file_rootname, output_path=None, n=1, launch_path=
             <mesh
               filename="package://zwei/meshes/Link16.STL" />
           </geometry>
-          
+
         </visual>
         <collision>
           <origin
@@ -941,7 +954,7 @@ def generate_urdf_file(output_file_rootname, output_path=None, n=1, launch_path=
             <mesh
               filename="package://zwei/meshes/Link17.STL" />
           </geometry>
-        
+
         </visual>
         <collision>
           <origin
@@ -1021,12 +1034,12 @@ def generate_urdf_file(output_file_rootname, output_path=None, n=1, launch_path=
       </joint>'''
 
         # ====================== 2. 生成12个0-31的随机数（顺序固定） ======================
-        #random_numbers = [random.randint(0, 31) for _ in range(12)]
-        #print(f"生成的12个随机数（对应Link25-Link36）：{random_numbers}")
+        # random_numbers = [random.randint(0, 31) for _ in range(12)]
+        # print(f"生成的12个随机数（对应Link25-Link36）：{random_numbers}")
 
         # ====================== 3. 定义动态link的模板 ======================
-    # 定义12个独立模板（索引0=Link25，索引1=Link26...索引11=Link36）
-    # 定义12个独立模板（索引0=Link25，索引1=Link26...索引11=Link36）
+        # 定义12个独立模板（索引0=Link25，索引1=Link26...索引11=Link36）
+        # 定义12个独立模板（索引0=Link25，索引1=Link26...索引11=Link36）
         dynamic_link_templates = [
             # ========== 模板0：对应Link25（第1个随机数） ==========
             '''
@@ -1083,7 +1096,7 @@ def generate_urdf_file(output_file_rootname, output_path=None, n=1, launch_path=
             <axis
               xyz="0 0 0" />
           </joint>''',
-            
+
             # ========== 模板1：对应Link26（第2个随机数） ==========
             '''
           <link
@@ -1130,7 +1143,7 @@ def generate_urdf_file(output_file_rootname, output_path=None, n=1, launch_path=
             name="26"
             type="fixed">
             <origin
-              xyz="3 3.8 0.2098"
+              xyz="3 3.8 0.2"
               rpy="1.5707963267949 0 0" />
             <parent
               link="base_link" />
@@ -1139,7 +1152,7 @@ def generate_urdf_file(output_file_rootname, output_path=None, n=1, launch_path=
             <axis
               xyz="0 0 0" />
           </joint>''',
-            
+
             # ========== 模板2：对应Link27（第3个随机数） ==========
             '''
           <link
@@ -1186,7 +1199,7 @@ def generate_urdf_file(output_file_rootname, output_path=None, n=1, launch_path=
             name="27"
             type="fixed">
             <origin
-              xyz="4.2 3.8 0.399800000000001"
+              xyz="4.2 3.8 0.4"
               rpy="1.5707963267949 0 0" />
             <parent
               link="base_link" />
@@ -1195,7 +1208,7 @@ def generate_urdf_file(output_file_rootname, output_path=None, n=1, launch_path=
             <axis
               xyz="0 0 0" />
           </joint>''',
-            
+
             # ========== 模板3：对应Link28（第4个随机数） ==========
             '''
           <link
@@ -1242,8 +1255,8 @@ def generate_urdf_file(output_file_rootname, output_path=None, n=1, launch_path=
             name="28"
             type="fixed">
             <origin
-              xyz="1.635 5 0.3748"
-              rpy="1.5707963267949 1.5707963267949 0" />
+              xyz="1.8 5 0.2"
+              rpy="1.5707963267949 0 0" />
             <parent
               link="base_link" />
             <child
@@ -1252,448 +1265,447 @@ def generate_urdf_file(output_file_rootname, output_path=None, n=1, launch_path=
               xyz="0 0 0" />
           </joint>''',
 
-          '''
-          <link
-            name="Link29">
-            <inertial>
+            '''
+            <link
+              name="Link29">
+              <inertial>
+                <origin
+                  xyz="1.11022302462516E-16 0.165 1.11022302462516E-16"
+                  rpy="0 0 0" />
+                <mass
+                  value="42.875" />
+                <inertia
+                  ixx="0.875364583333333"
+                  ixy="1.81208838190243E-18"
+                  ixz="8.00444944262377E-17"
+                  iyy="0.875364583333333"
+                  iyz="2.01902317758063E-16"
+                  izz="0.875364583333334" />
+              </inertial>
+              <visual>
+                <origin
+                  xyz="0 0 0"
+                  rpy="0 0 0" />
+                <geometry>
+                  <mesh
+                    filename="package://zwei/meshes/{dae_filename}.dae" />
+                </geometry>
+                <material
+                  name="">
+                  <color
+                    rgba="1 1 1 1" />
+                </material>
+              </visual>
+              <collision>
+                <origin
+                  xyz="0 0 0"
+                  rpy="0 0 0" />
+                <geometry>
+                  <mesh
+                    filename="package://zwei/meshes/Link29.STL" />
+                </geometry>
+              </collision>
+            </link>
+            <joint
+              name="29"
+              type="fixed">
               <origin
-                xyz="1.11022302462516E-16 0.165 1.11022302462516E-16"
-                rpy="0 0 0" />
-              <mass
-                value="42.875" />
-              <inertia
-                ixx="0.875364583333333"
-                ixy="1.81208838190243E-18"
-                ixz="8.00444944262377E-17"
-                iyy="0.875364583333333"
-                iyz="2.01902317758063E-16"
-                izz="0.875364583333334" />
-            </inertial>
-            <visual>
-              <origin
-                xyz="0 0 0"
-                rpy="0 0 0" />
-              <geometry>
-                <mesh
-                  filename="package://zwei/meshes/{dae_filename}.dae" />
-              </geometry>
-              <material
-                name="">
-                <color
-                  rgba="1 1 1 1" />
-              </material>
-            </visual>
-            <collision>
-              <origin
-                xyz="0 0 0"
-                rpy="0 0 0" />
-              <geometry>
-                <mesh
-                  filename="package://zwei/meshes/Link29.STL" />
-              </geometry>
-            </collision>
-          </link>
-          <joint
-            name="29"
-            type="fixed">
-            <origin
-              xyz="3.165 5 0.5748"
-              rpy="1.5707963267949 -1.5707963267949 0" />
-            <parent
-              link="base_link" />
-            <child
-              link="Link29" />
-            <axis
-              xyz="0 0 0" />
-          </joint>''',
+                xyz="3 5 0.4"
+                rpy="1.5707963267949 0 0" />
+              <parent
+                link="base_link" />
+              <child
+                link="Link29" />
+              <axis
+                xyz="0 0 0" />
+            </joint>''',
 
-          '''
-          <link
-            name="Link30">
-            <inertial>
+            '''
+            <link
+              name="Link30">
+              <inertial>
+                <origin
+                  xyz="1.11022302462516E-16 0.175 1.11022302462516E-16"
+                  rpy="0 0 0" />
+                <mass
+                  value="42.875" />
+                <inertia
+                  ixx="0.875364583333333"
+                  ixy="2.99435207506599E-17"
+                  ixz="-3.62374896154395E-17"
+                  iyy="0.875364583333333"
+                  iyz="8.96032588172275E-17"
+                  izz="0.875364583333332" />
+              </inertial>
+              <visual>
+                <origin
+                  xyz="0 0 0"
+                  rpy="0 0 0" />
+                <geometry>
+                  <mesh
+                    filename="package://zwei/meshes/{dae_filename}.dae" />
+                </geometry>
+                <material
+                  name="">
+                  <color
+                    rgba="1 1 1 1" />
+                </material>
+              </visual>
+              <collision>
+                <origin
+                  xyz="0 0 0"
+                  rpy="0 0 0" />
+                <geometry>
+                  <mesh
+                    filename="package://zwei/meshes/Link30.STL" />
+                </geometry>
+              </collision>
+            </link>
+            <joint
+              name="30"
+              type="fixed">
               <origin
-                xyz="1.11022302462516E-16 0.175 1.11022302462516E-16"
-                rpy="0 0 0" />
-              <mass
-                value="42.875" />
-              <inertia
-                ixx="0.875364583333333"
-                ixy="2.99435207506599E-17"
-                ixz="-3.62374896154395E-17"
-                iyy="0.875364583333333"
-                iyz="8.96032588172275E-17"
-                izz="0.875364583333332" />
-            </inertial>
-            <visual>
-              <origin
-                xyz="0 0 0"
-                rpy="0 0 0" />
-              <geometry>
-                <mesh
-                  filename="package://zwei/meshes/{dae_filename}.dae" />
-              </geometry>
-              <material
-                name="">
-                <color
-                  rgba="1 1 1 1" />
-              </material>
-            </visual>
-            <collision>
-              <origin
-                xyz="0 0 0"
-                rpy="0 0 0" />
-              <geometry>
-                <mesh
-                  filename="package://zwei/meshes/Link30.STL" />
-              </geometry>
-            </collision>
-          </link>
-          <joint
-            name="30"
-            type="fixed">
-            <origin
-              xyz="4.025 5 0.7748"
-              rpy="1.5707963267949 1.5707963267949 0" />
-            <parent
-              link="base_link" />
-            <child
-              link="Link30" />
-            <axis
-              xyz="0 0 0" />
-          </joint>''',
-          
-          '''
-          <link
-            name="Link31">
-            <inertial>
-              <origin
-                xyz="0 0.165 8.32667268468867E-17"
-                rpy="0 0 0" />
-              <mass
-                value="42.875" />
-              <inertia
-                ixx="0.875364583333332"
-                ixy="5.86914776038744E-19"
-                ixz="2.17968004756486E-17"
-                iyy="0.875364583333331"
-                iyz="-5.86914776038851E-19"
-                izz="0.875364583333331" />
-            </inertial>
-            <visual>
-              <origin
-                xyz="0 0 0"
-                rpy="0 0 0" />
-              <geometry>
-                <mesh
-                  filename="package://zwei/meshes/{dae_filename}.dae" />
-              </geometry>
-              <material
-                name="">
-                <color
-                  rgba="1 1 1 1" />
-              </material>
-            </visual>
-            <collision>
-              <origin
-                xyz="0 0 0"
-                rpy="0 0 0" />
-              <geometry>
-                <mesh
-                  filename="package://zwei/meshes/Link31.STL" />
-              </geometry>
-            </collision>
-          </link>
-          <joint
-            name="31"
-            type="fixed">
-            <origin
-              xyz="1.8 6.2 0.7398"
-              rpy="-1.5707963267949 0 3.14159265358979" />
-            <parent
-              link="base_link" />
-            <child
-              link="Link31" />
-            <axis
-              xyz="0 0 0" />
-          </joint>''',
+                xyz="4.2 5 0.6"
+                rpy="1.5707963267949 0 0" />
+              <parent
+                link="base_link" />
+              <child
+                link="Link30" />
+              <axis
+                xyz="0 0 0" />
+            </joint>''',
 
-          '''
-          <link
-            name="Link32">
-            <inertial>
+            '''
+            <link
+              name="Link31">
+              <inertial>
+                <origin
+                  xyz="0 0.165 8.32667268468867E-17"
+                  rpy="0 0 0" />
+                <mass
+                  value="42.875" />
+                <inertia
+                  ixx="0.875364583333332"
+                  ixy="5.86914776038744E-19"
+                  ixz="2.17968004756486E-17"
+                  iyy="0.875364583333331"
+                  iyz="-5.86914776038851E-19"
+                  izz="0.875364583333331" />
+              </inertial>
+              <visual>
+                <origin
+                  xyz="0 0 0"
+                  rpy="0 0 0" />
+                <geometry>
+                  <mesh
+                    filename="package://zwei/meshes/{dae_filename}.dae" />
+                </geometry>
+                <material
+                  name="">
+                  <color
+                    rgba="1 1 1 1" />
+                </material>
+              </visual>
+              <collision>
+                <origin
+                  xyz="0 0 0"
+                  rpy="0 0 0" />
+                <geometry>
+                  <mesh
+                    filename="package://zwei/meshes/Link31.STL" />
+                </geometry>
+              </collision>
+            </link>
+            <joint
+              name="31"
+              type="fixed">
               <origin
-                xyz="-4.44089209850063E-16 0.175 1.11022302462516E-16"
-                rpy="0 0 0" />
-              <mass
-                value="42.875" />
-              <inertia
-                ixx="0.875364583333333"
-                ixy="-2.46099437125244E-17"
-                ixz="-1.23616394898107E-16"
-                iyy="0.875364583333333"
-                iyz="8.03668474362121E-17"
-                izz="0.875364583333333" />
-            </inertial>
-            <visual>
-              <origin
-                xyz="0 0 0"
-                rpy="0 0 0" />
-              <geometry>
-                <mesh
-                  filename="package://zwei/meshes/{dae_filename}.dae" />
-              </geometry>
-              <material
-                name="">
-                <color
-                  rgba="1 1 1 1" />
-              </material>
-            </visual>
-            <collision>
-              <origin
-                xyz="0 0 0"
-                rpy="0 0 0" />
-              <geometry>
-                <mesh
-                  filename="package://zwei/meshes/Link32.STL" />
-              </geometry>
-            </collision>
-          </link>
-          <joint
-            name="32"
-            type="fixed">
-            <origin
-              xyz="3 6.2 0.9498"
-              rpy="-1.5707963267949 0 3.14159265358979" />
-            <parent
-              link="base_link" />
-            <child
-              link="Link32" />
-            <axis
-              xyz="0 0 0" />
-          </joint>''',
+                xyz="1.8 6.2 0.4"
+                rpy="1.5707963267949 0 3.14159265358979" />
+              <parent
+                link="base_link" />
+              <child
+                link="Link31" />
+              <axis
+                xyz="0 0 0" />
+            </joint>''',
 
-          '''
-          <link
-            name="Link33">
-            <inertial>
+            '''
+            <link
+              name="Link32">
+              <inertial>
+                <origin
+                  xyz="-4.44089209850063E-16 0.175 1.11022302462516E-16"
+                  rpy="0 0 0" />
+                <mass
+                  value="42.875" />
+                <inertia
+                  ixx="0.875364583333333"
+                  ixy="-2.46099437125244E-17"
+                  ixz="-1.23616394898107E-16"
+                  iyy="0.875364583333333"
+                  iyz="8.03668474362121E-17"
+                  izz="0.875364583333333" />
+              </inertial>
+              <visual>
+                <origin
+                  xyz="0 0 0"
+                  rpy="0 0 0" />
+                <geometry>
+                  <mesh
+                    filename="package://zwei/meshes/{dae_filename}.dae" />
+                </geometry>
+                <material
+                  name="">
+                  <color
+                    rgba="1 1 1 1" />
+                </material>
+              </visual>
+              <collision>
+                <origin
+                  xyz="0 0 0"
+                  rpy="0 0 0" />
+                <geometry>
+                  <mesh
+                    filename="package://zwei/meshes/Link32.STL" />
+                </geometry>
+              </collision>
+            </link>
+            <joint
+              name="32"
+              type="fixed">
               <origin
-                xyz="0 0.175 8.32667268468867E-17"
-                rpy="0 0 0" />
-              <mass
-                value="42.875" />
-              <inertia
-                ixx="0.875364583333333"
-                ixy="7.6323204737287E-18"
-                ixz="2.35643952628183E-18"
-                iyy="0.875364583333333"
-                iyz="3.6920519972462E-17"
-                izz="0.875364583333333" />
-            </inertial>
-            <visual>
-              <origin
-                xyz="0 0 0"
-                rpy="0 0 0" />
-              <geometry>
-                <mesh
-                  filename="package://zwei/meshes/{dae_filename}.dae" />
-              </geometry>
-              <material
-                name="">
-                <color
-                  rgba="1 1 1 1" />
-              </material>
-            </visual>
-            <collision>
-              <origin
-                xyz="0 0 0"
-                rpy="0 0 0" />
-              <geometry>
-                <mesh
-                  filename="package://zwei/meshes/Link33.STL" />
-              </geometry>
-            </collision>
-          </link>
-          <joint
-            name="33"
-            type="fixed">
-            <origin
-              xyz="4.375 6.2 0.5748"
-              rpy="1.5707963267949 -1.5707963267949 0" />
-            <parent
-              link="base_link" />
-            <child
-              link="Link33" />
-            <axis
-              xyz="0 0 0" />
-          </joint>''',
+                xyz="3 6.2 0.6"
+                rpy="1.5707963267949 0 3.14159265358979" />
+              <parent
+                link="base_link" />
+              <child
+                link="Link32" />
+              <axis
+                xyz="0 0 0" />
+            </joint>''',
 
-          '''
-          <link
-            name="Link34">
-            <inertial>
+            '''
+            <link
+              name="Link33">
+              <inertial>
+                <origin
+                  xyz="0 0.175 8.32667268468867E-17"
+                  rpy="0 0 0" />
+                <mass
+                  value="42.875" />
+                <inertia
+                  ixx="0.875364583333333"
+                  ixy="7.6323204737287E-18"
+                  ixz="2.35643952628183E-18"
+                  iyy="0.875364583333333"
+                  iyz="3.6920519972462E-17"
+                  izz="0.875364583333333" />
+              </inertial>
+              <visual>
+                <origin
+                  xyz="0 0 0"
+                  rpy="0 0 0" />
+                <geometry>
+                  <mesh
+                    filename="package://zwei/meshes/{dae_filename}.dae" />
+                </geometry>
+                <material
+                  name="">
+                  <color
+                    rgba="1 1 1 1" />
+                </material>
+              </visual>
+              <collision>
+                <origin
+                  xyz="0 0 0"
+                  rpy="0 0 0" />
+                <geometry>
+                  <mesh
+                    filename="package://zwei/meshes/Link33.STL" />
+                </geometry>
+              </collision>
+            </link>
+            <joint
+              name="33"
+              type="fixed">
               <origin
-                xyz="0 0.175 0"
-                rpy="0 0 0" />
-              <mass
-                value="42.875" />
-              <inertia
-                ixx="0.875364583333332"
-                ixy="-1.46931078415236E-17"
-                ixz="1.38349979620737E-16"
-                iyy="0.875364583333331"
-                iyz="1.9651525777024E-17"
-                izz="0.875364583333331" />
-            </inertial>
-            <visual>
-              <origin
-                xyz="0 0 0"
-                rpy="0 0 0" />
-              <geometry>
-                <mesh
-                  filename="package://zwei/meshes/{dae_filename}.dae" />
-              </geometry>
-              <material
-                name="">
-                <color
-                  rgba="1 1 1 1" />
-              </material>
-            </visual>
-            <collision>
-              <origin
-                xyz="0 0 0"
-                rpy="0 0 0" />
-              <geometry>
-                <mesh
-                  filename="package://zwei/meshes/Link34.STL" />
-              </geometry>
-            </collision>
-          </link>
-          <joint
-            name="34"
-            type="fixed">
-            <origin
-              xyz="1.8 7.4 0.199800000000001"
-              rpy="1.5707963267949 0 0" />
-            <parent
-              link="base_link" />
-            <child
-              link="Link34" />
-            <axis
-              xyz="0 0 0" />
-          </joint>''',
+                xyz="4.2 6.2 0.4"
+                rpy="1.5707963267949 0 0" />
+              <parent
+                link="base_link" />
+              <child
+                link="Link33" />
+              <axis
+                xyz="0 0 0" />
+            </joint>''',
 
-          '''
-          <link
-            name="Link35">
-            <inertial>
+            '''
+            <link
+              name="Link34">
+              <inertial>
+                <origin
+                  xyz="0 0.175 0"
+                  rpy="0 0 0" />
+                <mass
+                  value="42.875" />
+                <inertia
+                  ixx="0.875364583333332"
+                  ixy="-1.46931078415236E-17"
+                  ixz="1.38349979620737E-16"
+                  iyy="0.875364583333331"
+                  iyz="1.9651525777024E-17"
+                  izz="0.875364583333331" />
+              </inertial>
+              <visual>
+                <origin
+                  xyz="0 0 0"
+                  rpy="0 0 0" />
+                <geometry>
+                  <mesh
+                    filename="package://zwei/meshes/{dae_filename}.dae" />
+                </geometry>
+                <material
+                  name="">
+                  <color
+                    rgba="1 1 1 1" />
+                </material>
+              </visual>
+              <collision>
+                <origin
+                  xyz="0 0 0"
+                  rpy="0 0 0" />
+                <geometry>
+                  <mesh
+                    filename="package://zwei/meshes/Link34.STL" />
+                </geometry>
+              </collision>
+            </link>
+            <joint
+              name="34"
+              type="fixed">
               <origin
-                xyz="-1.11022302462516E-16 0.175 0"
-                rpy="0 0 0" />
-              <mass
-                value="42.875" />
-              <inertia
-                ixx="0.875364583333333"
-                ixy="1.18052701877353E-16"
-                ixz="-3.83989045164059E-17"
-                iyy="0.875364583333333"
-                iyz="-7.15730675387921E-17"
-                izz="0.875364583333334" />
-            </inertial>
-            <visual>
-              <origin
-                xyz="0 0 0"
-                rpy="0 0 0" />
-              <geometry>
-                <mesh
-                  filename="package://zwei/meshes/{dae_filename}.dae" />
-              </geometry>
-              <material
-                name="">
-                <color
-                  rgba="1 1 1 1" />
-              </material>
-            </visual>
-            <collision>
-              <origin
-                xyz="0 0 0"
-                rpy="0 0 0" />
-              <geometry>
-                <mesh
-                  filename="package://zwei/meshes/Link35.STL" />
-              </geometry>
-            </collision>
-          </link>
-          <joint
-            name="35"
-            type="fixed">
-            <origin
-              xyz="2.825 7.4 0.5748"
-              rpy="1.5707963267949 1.5707963267949 0" />
-            <parent
-              link="base_link" />
-            <child
-              link="Link35" />
-            <axis
-              xyz="0 0 0" />
-          </joint>''',
+                xyz="1.8 7.4 0.2"
+                rpy="1.5707963267949 0 0" />
+              <parent
+                link="base_link" />
+              <child
+                link="Link34" />
+              <axis
+                xyz="0 0 0" />
+            </joint>''',
 
-          '''
-          <link
-            name="Link36">
-            <inertial>
+            '''
+            <link
+              name="Link35">
+              <inertial>
+                <origin
+                  xyz="-1.11022302462516E-16 0.175 0"
+                  rpy="0 0 0" />
+                <mass
+                  value="42.875" />
+                <inertia
+                  ixx="0.875364583333333"
+                  ixy="1.18052701877353E-16"
+                  ixz="-3.83989045164059E-17"
+                  iyy="0.875364583333333"
+                  iyz="-7.15730675387921E-17"
+                  izz="0.875364583333334" />
+              </inertial>
+              <visual>
+                <origin
+                  xyz="0 0 0"
+                  rpy="0 0 0" />
+                <geometry>
+                  <mesh
+                    filename="package://zwei/meshes/{dae_filename}.dae" />
+                </geometry>
+                <material
+                  name="">
+                  <color
+                    rgba="1 1 1 1" />
+                </material>
+              </visual>
+              <collision>
+                <origin
+                  xyz="0 0 0"
+                  rpy="0 0 0" />
+                <geometry>
+                  <mesh
+                    filename="package://zwei/meshes/Link35.STL" />
+                </geometry>
+              </collision>
+            </link>
+            <joint
+              name="35"
+              type="fixed">
               <origin
-                xyz="0 0.175 0"
-                rpy="0 0 0" />
-              <mass
-                value="42.875" />
-              <inertia
-                ixx="0.875364583333333"
-                ixy="-8.03668474362122E-17"
-                ixz="-6.2354635343986E-17"
-                iyy="0.875364583333334"
-                iyz="1.96515257770239E-17"
-                izz="0.875364583333334" />
-            </inertial>
-            <visual>
+                xyz="3 7.4 0.4"
+                rpy="1.5707963267949 0 0" />
+              <parent
+                link="base_link" />
+              <child
+                link="Link35" />
+              <axis
+                xyz="0 0 0" />
+            </joint>''',
+
+            '''
+            <link
+              name="Link36">
+              <inertial>
+                <origin
+                  xyz="0 0.175 0"
+                  rpy="0 0 0" />
+                <mass
+                  value="42.875" />
+                <inertia
+                  ixx="0.875364583333333"
+                  ixy="-8.03668474362122E-17"
+                  ixz="-6.2354635343986E-17"
+                  iyy="0.875364583333334"
+                  iyz="1.96515257770239E-17"
+                  izz="0.875364583333334" />
+              </inertial>
+              <visual>
+                <origin
+                  xyz="0 0 0"
+                  rpy="0 0 0" />
+                <geometry>
+                  <mesh
+                    filename="package://zwei/meshes/{dae_filename}.dae" />
+                </geometry>
+                <material
+                  name="">
+                  <color
+                    rgba="1 1 1 1" />
+                </material>
+              </visual>
+              <collision>
+                <origin
+                  xyz="0 0 0"
+                  rpy="0 0 0" />
+                <geometry>
+                  <mesh
+                    filename="package://zwei/meshes/Link36.STL" />
+                </geometry>
+              </collision>
+            </link>
+            <joint
+              name="36"
+              type="fixed">
               <origin
-                xyz="0 0 0"
-                rpy="0 0 0" />
-              <geometry>
-                <mesh
-                  filename="package://zwei/meshes/{dae_filename}.dae" />
-              </geometry>
-              <material
-                name="">
-                <color
-                  rgba="1 1 1 1" />
-              </material>
-            </visual>
-            <collision>
-              <origin
-                xyz="0 0 0"
-                rpy="0 0 0" />
-              <geometry>
-                <mesh
-                  filename="package://zwei/meshes/Link36.STL" />
-              </geometry>
-            </collision>
-          </link>
-          <joint
-            name="36"
-            type="fixed">
-            <origin
-              xyz="4.2 7.4 0.549800000000001"
-              rpy="-1.5707963267949 0 3.14159265358979" />
-            <parent
-              link="base_link" />
-            <child
-                link="Link36" />
-            <axis
-              xyz="0 0 0" />
-          </joint>'''
+                xyz="4.2 7.4 0.2"
+                rpy="1.5707963267949 0 3.14159265358979" />
+              <parent
+                link="base_link" />
+              <child
+                  link="Link36" />
+              <axis
+                xyz="0 0 0" />
+            </joint>'''
         ]
 
-        
         gazebo_materials = '''
         <gazebo reference="base_link">
         <material>Gazebo/WoodFloor</material>
@@ -1752,49 +1764,67 @@ def generate_urdf_file(output_file_rootname, output_path=None, n=1, launch_path=
         <gazebo reference="Link18">
         <material>Gazebo/WoodPallet</material>
         </gazebo>'''
-        
-            # ====================== 4. 拼接动态link内容 ======================
+
+        # ====================== 4. 拼接动态link内容 ======================
         dynamic_content = ""
         for idx, rand_num in enumerate(random_list):
             link_num = 25 + idx
             if rand_num == 0:
                 continue
-                
-            # 生成dae文件名逻辑保持不变
-            n_pos = idx + 1
-            if 1 <= n_pos <= 9:
-                prefix = str(n_pos)
-            elif n_pos == 10:
-                prefix = 'a'
-            elif n_pos == 11:
-                prefix = 'b'
-            elif n_pos == 12:
-                prefix = 'c'
+
+            prefix = 1
+            # # 生成dae文件名逻辑保持不变
+            # n_pos = idx + 1
+            # if 1 <= n_pos <= 9:
+            #     prefix = str(n_pos)
+            # elif n_pos == 10:
+            #     prefix = 'a'
+            # elif n_pos == 11:
+            #     prefix = 'b'
+            # elif n_pos == 12:
+            #     prefix = 'c'
             num_str = f"{rand_num:02d}"
             dae_filename = f"r{prefix}{num_str}"
-            
+
             current_template = dynamic_link_templates[idx]
-            link_content = current_template.format(dae_filename=dae_filename)
+
+            if link_num in links_to_replace:
+                # 1. 从四个选项中随机选择一个作为新的z值
+                new_z = random.choice(z_options)
+
+                # 2. 使用正则表达式匹配 `<joint` 标签中的 `rpy="... ... ..."` 格式，并替换第三个数字（z值）
+                # 查找 <joint 标签开始，直到遇到 <axis 标签结束
+                pattern = r'(<joint[^>]*>\s*<origin[^>]*rpy="[-\d\.]+\s+[-\d\.]+\s+)[-\d\.]+("[^>]*>)'
+                # 替换为：保留前两个数字和空格，然后拼接新的z值，再拼接回引号和标签
+                modified_template = re.sub(pattern, rf'\g<1>{new_z}\2', current_template)
+
+                # 3. 使用修改后的模板进行格式化
+                link_content = modified_template.format(dae_filename=dae_filename)
+            else:
+                # 对于不在替换列表中的link，使用原模板
+                link_content = current_template.format(dae_filename=dae_filename)
+
             dynamic_content += link_content
 
         # ====================== 6. 拼接完整URDF内容并写入文件 ======================
         full_urdf_content = base_urdf_content + dynamic_content + gazebo_materials + "\n</robot>"
-        
+
         with open(full_output_path, "w", encoding="utf-8") as f:
             f.write(full_urdf_content)
-        
+
         print(f"URDF文件已生成：{full_output_path}")
 
         launch_output_path = os.path.join(launch_path, f"{output_file_rootname}{file_index}.launch")
 
         zwei_idx = urdf_path.index("zwei")
-        urdf_path_relative_to_zwei = urdf_path[zwei_idx+5:]
+        urdf_path_relative_to_zwei = urdf_path[zwei_idx + 5:]
         if urdf_path_relative_to_zwei[len(urdf_path_relative_to_zwei) - 1] == '/':
             # print("in")
             urdf_path_relative_to_zwei = urdf_path_relative_to_zwei[0:len(urdf_path_relative_to_zwei) - 1]
         # print(urdf_path_relative_to_zwei)
 
-        launch_content = launch_template.format(name=f"{output_file_rootname}{file_index}",path=urdf_path_relative_to_zwei)
+        launch_content = launch_template.format(name=f"{output_file_rootname}{file_index}",
+                                                path=urdf_path_relative_to_zwei)
 
         with open(launch_output_path, "w", encoding="utf-8") as f:
             f.write(launch_content)
@@ -1803,12 +1833,12 @@ def generate_urdf_file(output_file_rootname, output_path=None, n=1, launch_path=
 if __name__ == "__main__":
     n = int(input("请输入要生成的文件数量n: "))
 
-    urdf_path = "/home/awwsome/RC/world_ws6/src/zwei/map_/urdf"
-    launch_path = "/home/awwsome/RC/world_ws6/src/zwei/map1_add/launch"
-    txt_path = "/home/awwsome/RC/world_ws6/src/zwei/map1_add/txt"
+    urdf_path = "/home/awwsome/RC/world_ws_real/src/zwei/map2/urdf"
+    launch_path = "/home/awwsome/RC/world_ws_real/src/zwei/map2/launch"
+    txt_path = "/home/awwsome/RC/world_ws_real/src/zwei/map2/txt"
 
-    os.makedirs(urdf_path,exist_ok=True)
+    os.makedirs(urdf_path, exist_ok=True)
     os.makedirs(launch_path, exist_ok=True)
     os.makedirs(txt_path, exist_ok=True)
 
-    generate_urdf_file("map_", urdf_path, n, launch_path, txt_path)
+    generate_urdf_file("map2_", urdf_path, n, launch_path, txt_path)
