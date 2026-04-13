@@ -1,6 +1,24 @@
 import os
 
-def count_label_cls(root_path:str) -> (dict, int, list, int, list, float, int):
+# def count_label_cls(root_path:str) -> (dict, int, list, int, list, float, int):
+def count_label_cls(root_path:str) -> dict:
+    """
+    统计分类数据集各类别的数量
+
+    :param root_path: 分类数据集路径
+    :return: 字典，键值如下
+    "label_amount": 各类别数量字典 {"类别名": 对应数量},
+    "min_amount": 最小数量字典 {
+        "amount": 最小数量,
+        "idx_list": 对应的类别列表,
+    },
+    "max_amount": 最大数量字典 {
+        "amount": 最大数量,
+        "idx_list": 对应的类别列表,
+    },
+    "sum_amount": 数据集照片总数 ,
+    "avg_amount": 各类别平均数
+    """
     list_dir = os.listdir(root_path)
     list_dir = [x for x in list_dir if os.path.isdir(os.path.join(root_path, x))]
     try:
@@ -39,7 +57,21 @@ def count_label_cls(root_path:str) -> (dict, int, list, int, list, float, int):
                 min_amount_idx_list.append(label_dir)
         sum_amount += imgs_amount
 
-    return label_amount, min_amount, min_amount_idx_list, max_amount, max_amount_idx_list, sum_amount / len(label_amount), sum_amount
+    output_dict = {
+        "label_amount": label_amount,
+        "min_amount": {
+            "amount": min_amount,
+            "idx_list": min_amount_idx_list,
+        },
+        "max_amount": {
+            "amount": max_amount,
+            "idx_list": max_amount_idx_list,
+        },
+        "sum_amount": sum_amount,
+        "avg_amount": sum_amount / len(label_amount)
+
+    }
+    return output_dict
 
 if __name__ == "__main__":
 

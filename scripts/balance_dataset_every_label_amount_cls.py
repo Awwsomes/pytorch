@@ -6,6 +6,11 @@ from countLabel_cls import count_label_cls
 from rename_data import copy_dirs
 
 def balance_amount(root_path:str) -> dict[str, list]:
+    """
+    平衡分类数据集各类别的数量，以最少的数量为基准，最多向上浮动20张，随机抽取
+    :param root_path: 分类数据集根目录
+    :return: 字典[“类别名”：该类别被选中的图片路径列表]
+    """
     # 获取最小值
     label_amount,min_label_amount,_,_,_,_ = count_label_cls(root_path)
     # 遍历类别
