@@ -193,9 +193,13 @@ class DatasetSorter(QMainWindow):
         # 状态栏
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
-        self.status_label = QLabel("就绪")
-        self.status_label.setStyleSheet("color: #666; padding: 0 10px;")
-        self.status_bar.addPermanentWidget(self.status_label)
+        self.operation_label = QLabel("就绪")
+        self.operation_label.setStyleSheet("color: #666; padding: 0 10px;")
+        self.status_bar.addPermanentWidget(self.operation_label)
+
+        self.info_label = QLabel("")
+        self.info_label.setStyleSheet("color: #666; padding: 0 10px;")
+        self.status_bar.addWidget(self.info_label)
 
     def load_data(self):
         for name in self.class_names:
@@ -258,6 +262,9 @@ class DatasetSorter(QMainWindow):
         files = [f for f in os.listdir(folder_path) if f.lower().endswith(valid_exts)]
         files.sort()
 
+        # 状态栏打印类别图片总数
+        self.info_label.setText(f"总数：{len(files)}")
+
         for i, filename in enumerate(files):
             full_path = os.path.join(folder_path, filename)
             try:
@@ -294,13 +301,13 @@ class DatasetSorter(QMainWindow):
             self.grid_columns = max(1, self.grid_columns - 1)
         if old_cols != self.grid_columns:
             self.refresh_tab(self.tab_widget.currentIndex())
-            self.status_label.setText(f"列数: {self.grid_columns}")
-            self.status_label.setStyleSheet("color: #666; padding: 0 10px;")
+            self.operation_label.setText(f"列数: {self.grid_columns}")
+            self.operation_label.setStyleSheet("color: #666; padding: 0 10px;")
 
     def undo_operation(self):
         if not self.operation_history:
-            self.status_label.setText("⚠️ 没有可撤回的操作")
-            self.status_label.setStyleSheet("color: #FFA500; padding: 0 10px;")
+            self.operation_label.setText("⚠️ 没有可撤回的操作")
+            self.operation_label.setStyleSheet("color: #FFA500; padding: 0 10px;")
             return
 
         # 取出最后一次操作
@@ -328,13 +335,13 @@ class DatasetSorter(QMainWindow):
         current_idx = self.tab_widget.currentIndex()
         self.refresh_tab(current_idx)
 
-        self.status_label.setText(f"↩️ 已撤回 {undo_count} 张图片")
-        self.status_label.setStyleSheet("color: #1976d2; padding: 0 10px;")
+        self.operation_label.setText(f"↩️ 已撤回 {undo_count} 张图片")
+        self.operation_label.setStyleSheet("color: #1976d2; padding: 0 10px;")
 
     def redo_operation(self):
         if not self.redo_history:
-            self.status_label.setText("⚠️ 没有可恢复的操作")
-            self.status_label.setStyleSheet("color: #FFA500; padding: 0 10px;")
+            self.operation_label.setText("⚠️ 没有可恢复的操作")
+            self.operation_label.setStyleSheet("color: #FFA500; padding: 0 10px;")
             return
 
         # 取出最后一次撤回的操作
@@ -360,8 +367,8 @@ class DatasetSorter(QMainWindow):
         current_idx = self.tab_widget.currentIndex()
         self.refresh_tab(current_idx)
 
-        self.status_label.setText(f"↪️ 已恢复 {redo_count} 张图片")
-        self.status_label.setStyleSheet("color: #1976d2; padding: 0 10px;")
+        self.operation_label.setText(f"↪️ 已恢复 {redo_count} 张图片")
+        self.operation_label.setStyleSheet("color: #1976d2; padding: 0 10px;")
 
     def keyPressEvent(self, event):
         key = event.key()
@@ -418,8 +425,8 @@ class DatasetSorter(QMainWindow):
 
     def process_move(self, target_idx):
         if target_idx <= 0 or target_idx > len(self.class_names):
-            self.status_label.setText(f"❌ 无效类别序号 {target_idx}")
-            self.status_label.setStyleSheet("color: #d32f2f; padding: 0 10px;")
+            self.operation_label.setText(f"❌ 无效类别序号 {target_idx}")
+            self.operation_label.setStyleSheet("color: #d32f2f; padding: 0 10px;")
             return
 
         current_idx = self.tab_widget.currentIndex()
@@ -441,8 +448,8 @@ class DatasetSorter(QMainWindow):
                 images_to_move = [active_widget]
 
         if not images_to_move:
-            self.status_label.setText("❗ 请先框选图片或将鼠标悬停在图片上")
-            self.status_label.setStyleSheet("color: #d32f2f; padding: 0 10px;")
+            self.operation_label.setText("❗ 请先框选图片或将鼠标悬停在图片上")
+            self.operation_label.setStyleSheet("color: #d32f2f; padding: 0 10px;")
             return
 
         # 新增：删除操作
@@ -487,10 +494,10 @@ class DatasetSorter(QMainWindow):
 
         if success_count > 0:
             if target_idx == len(self.class_names):
-                self.status_label.setText(f"✅ 已批量删除 {success_count} 张至 [{target_idx}]")
+                self.operation_label.setText(f"✅ 已批量删除 {success_count} 张至 [{target_idx}]")
             else:
-                self.status_label.setText(f"✅ 已批量移动 {success_count} 张至 [{target_idx}] {target_class}")
-                self.status_label.setStyleSheet("color: #388e3c; padding: 0 10px;")
+                self.operation_label.setText(f"✅ 已批量移动 {success_count} 张至 [{target_idx}] {target_class}")
+                self.operation_label.setStyleSheet("color: #388e3c; padding: 0 10px;")
 
 def main():
     app = QApplication(sys.argv)
@@ -504,7 +511,7 @@ def main():
     if not txt_dir:
         txt_dir = None
 
-    subfolders = [f.name for f in os.scandir(root_dir) if f.is_dir()]
+    subfolders = [f.name for f in os.scandir(root_dir) if f.is_dir()]  # scandir和listdir有啥区别
     if "垃圾桶" in subfolders:
         subfolders.remove("垃圾桶")
     try:
