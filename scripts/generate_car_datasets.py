@@ -204,17 +204,18 @@ def generate_11class_dataset(class_model_path, input_roi_img_path, output_root_d
 
     # 生成分类数据集
     print("构建分类数据集中...\n")
-    classify_dataset_by_cls_predict_label(imgs_path, new_labels_path, output_root_dir, label_name_list)
+    output_path = os.path.join(output_root_dir, "class_dataset")
+    classify_dataset_by_cls_predict_label(imgs_path, new_labels_path, output_path, label_name_list)
 
     # 删除临时的检测数据集
     shutil.rmtree(root_path)
 
     # 保存信息：能从生成的数据集找到原始模型预测出来的txt，包含top5置信度
-    raw_model_predict_path = os.path.join(output_root_dir, "raw_model_predict_path.txt")
+    raw_model_predict_path = os.path.join(output_path, "raw_model_predict_path.txt")
     with open(raw_model_predict_path, 'w') as txt:
         txt.write(f"{result[0].save_dir}")
     with open(os.path.join(result[0].save_dir, "对应数据集文件夹路径.txt"), 'w') as txt:
-        txt.write(f"{output_root_dir}")
+        txt.write(f"{output_path}")
 
     print("完成.\n")
 
@@ -516,19 +517,24 @@ if __name__ == "__main__":
     os.makedirs(os.path.join(config.path.output_root_path,"roi_images"), exist_ok=True)
 
     # 生成总数据集
-    generate_global_dataset(config.path.raw_data_root_path, config.path.output_root_path, config.settings.start_idx)
+    if config.settings.generate_global_data:
+        generate_global_dataset(config.path.raw_data_root_path, config.path.output_root_path, config.settings.start_idx)
 
     # 生成roi数据
-    generate_roi_data(config.path.output_root_path)
+    if config.settings.generate_roi_data:
+        generate_roi_data(config.path.output_root_path)
 
     # 生成卷轴分类数据集
-    generate_11class_dataset(config.class_config.model_path, os.path.join(config.path.output_root_path,"roi_images"),
-                             config.path.output_root_path, config.class_config.start_idx, config.class_config.img_root_name,
-                             config.class_config.label_name_list, config.class_config.model_predict_output_dir)
+    if config.settings.generate_class_dataset:
+        generate_11class_dataset(config.class_config.model_path, os.path.join(config.path.output_root_path,"roi_images"),
+                                 config.path.output_root_path, config.class_config.start_idx, config.class_config.img_root_name,
+                                 config.class_config.label_name_list, config.class_config.model_predict_output_dir)
 
     # 生成角点数据集
-    generate_corner_datasets(config.path.output_root_path, config.detect_config.model_path, config.detect_config.data_yaml,
-                             config.detect_config.conf_thres, config.detect_config.iou_thres, config.detect_config.max_det)
+    if config.settings.generate_corner_dataset:
+        generate_corner_datasets(config.path.output_root_path, config.detect_config.model_path, config.detect_config.data_yaml,
+                                 config.detect_config.conf_thres, config.detect_config.iou_thres, config.detect_config.max_det)
 
     # 生成测试数据集
-    generate_test_global_data(config.path.raw_data_root_path, config.path.output_root_path, config.settings.test_data_start_idx)
+    if config.settings.generate_test_global_data:
+        generate_test_global_data(config.path.raw_data_root_path, config.path.output_root_path, config.settings.test_data_start_idx)

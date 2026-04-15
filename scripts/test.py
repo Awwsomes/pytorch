@@ -151,15 +151,24 @@ import numpy as np
 # import os
 # print(os.listdir(r"D:\A_myData\RC26-Vision\dataset\A_car\raw_data\2026_3_28\22\imageRT\imagert1"))
 
-path = r"/home/awwsome/图片/摄像头/old"
-new_path = r"/home/awwsome/图片"
-list_img = os.listdir(path)
-for img in list_img:
-    img_name = img.split(".")[0]
-    new_img_name = "d" + img_name + ".png"
-    old_img_path = os.path.join(path, img)
-    new_img_path = os.path.join(new_path, new_img_name)
-    shutil.copy2(old_img_path, new_img_path)
+# path = r"/home/awwsome/图片/摄像头/old"
+# new_path = r"/home/awwsome/图片"
+# list_img = os.listdir(path)
+# for img in list_img:
+#     img_name = img.split(".")[0]
+#     new_img_name = "d" + img_name + ".png"
+#     old_img_path = os.path.join(path, img)
+#     new_img_path = os.path.join(new_path, new_img_name)
+#     shutil.copy2(old_img_path, new_img_path)
+
+import cv2
+import numpy as np
+img_path = [r"C:\Users\tianc\Desktop\0000_new_1.png", r"C:\Users\tianc\Desktop\0001_new_1.png", r"C:\Users\tianc\Desktop\img.png"]
+imgs = [cv2.imread(x) for x in img_path]
+blank = np.zeros((1200, 600, 3), dtype=np.uint8)
+blank[:600, :] = imgs[0]
+blank[600:1200, :] = imgs[1]
+cv2.imwrite(r"D:\A_myData\RC26-Vision\Pytorch\pytorch\scripts\test_file\img.png", blank)
 
 # import os
 # import numpy as np
