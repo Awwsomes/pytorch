@@ -153,9 +153,10 @@ class GlobalFilter(QObject):
 
 
 class DatasetSorter(QMainWindow):
-    def __init__(self, root_dir, class_names, txt_dir):
+    def __init__(self, root_dir:str, class_names:list, txt_dir:str):
         super().__init__()
         self.root_dir = root_dir
+        class_names.append("垃圾桶")
         self.class_names = class_names
         self.txt_dir = txt_dir  # 【新增】保存路径
 
@@ -410,6 +411,9 @@ class DatasetSorter(QMainWindow):
             self.info_label.setText("提示：拖拽框选图片 -> 按快捷键批量移动 (0-9/一行+0-9/...) | Ctrl+滚轮：调整列数")
             return
 
+        if key == Qt.Key_Delete:
+            self.process_move(len(self.class_names))
+
         super().keyPressEvent(event)
 
     def process_move(self, target_idx):
@@ -441,8 +445,13 @@ class DatasetSorter(QMainWindow):
             self.status_label.setStyleSheet("color: #d32f2f; padding: 0 10px;")
             return
 
-        target_class = self.class_names[target_idx - 1]
-        target_dir = os.path.join(self.root_dir, target_class)
+        # 新增：删除操作
+        if target_idx == len(self.class_names):
+            target_dir = os.path.join(self.root_dir, "垃圾桶")
+            os.makedirs(target_dir, exist_ok=True)
+        else:
+            target_class = self.class_names[target_idx - 1]
+            target_dir = os.path.join(self.root_dir, target_class)
         success_count = 0
 
         # 【新增】记录本次操作的所有文件路径
@@ -453,7 +462,7 @@ class DatasetSorter(QMainWindow):
             if not os.path.exists(src_path):
                 continue
 
-            filename = os.path.basename(src_path)
+            filename:str = os.path.basename(src_path)
             dst_path = os.path.join(target_dir, filename)
             base, ext = os.path.splitext(filename)
             counter = 1
@@ -477,9 +486,11 @@ class DatasetSorter(QMainWindow):
         self.refresh_tab(current_idx)
 
         if success_count > 0:
-            self.status_label.setText(f"✅ 已批量移动 {success_count} 张至 [{target_idx}] {target_class}")
-            self.status_label.setStyleSheet("color: #388e3c; padding: 0 10px;")
-
+            if target_idx == len(self.class_names):
+                self.status_label.setText(f"✅ 已批量删除 {success_count} 张至 [{target_idx}]")
+            else:
+                self.status_label.setText(f"✅ 已批量移动 {success_count} 张至 [{target_idx}] {target_class}")
+                self.status_label.setStyleSheet("color: #388e3c; padding: 0 10px;")
 
 def main():
     app = QApplication(sys.argv)
@@ -494,7 +505,12 @@ def main():
         txt_dir = None
 
     subfolders = [f.name for f in os.scandir(root_dir) if f.is_dir()]
-    subfolders.sort(key=int)
+    if "垃圾桶" in subfolders:
+        subfolders.remove("垃圾桶")
+    try:
+        subfolders.sort(key=int)
+    except ValueError:
+        subfolders.sort()
     default_classes = ", ".join(subfolders) if subfolders else "class_1, class_2, class_3"
 
     text, ok = QInputDialog.getText(None, "设置类别", "请输入类别名称（按顺序，逗号分隔）：", text=default_classes)
