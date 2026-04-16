@@ -93,6 +93,33 @@ class ImageLabel(QLabel):
         self.update_style()
         super().leaveEvent(event)
 
+    def mouseReleaseEvent(self, event):
+        # print("imagelabel mouse release")
+        if event.button() == Qt.LeftButton:
+            # 这里的 main_window 需要在 DatasetSorter 创建它时传入
+            # 或者通过 self.window() 获取顶层窗口
+            main_win = self.window()
+
+            # 检查是否按住 Ctrl
+            modifiers = QApplication.keyboardModifiers()
+            if not (modifiers & Qt.ControlModifier):
+                # 没按 Ctrl，清空之前的
+                main_win.clear_selection()
+                self.is_selected = True
+            else:
+                # 按了 Ctrl，反转选中状态
+                self.is_selected = not self.is_selected
+
+            self.update_style()
+
+            # 同步主窗口的集合
+            if self.is_selected:
+                main_win.selected_images.add(self)
+            else:
+                main_win.selected_images.discard(self)
+
+        super().mousePressEvent(event)
+
 class GridContainer(QWidget):
     """专门的网格容器，处理拖拽框选逻辑"""
 
@@ -101,26 +128,38 @@ class GridContainer(QWidget):
         self.main_window = None  # 会在外部设置
         self.rubber_band = QRubberBand(QRubberBand.Rectangle, self)
         self.selection_start = QPoint()
+        self.mouse_left_press = False
 
     def set_main_window(self, mw):
         self.main_window = mw
 
     def mousePressEvent(self, event):
-        if event.button() == Qt.LeftButton:
+        self.mouse_left_press = True
+        # print("GridContainer mousePressEvent")
+        # if event.button() == Qt.LeftButton:
+        #     self.selection_start = event.pos()
+        #     self.rubber_band.setGeometry(QRect(self.selection_start, QSize()))
+        #     self.rubber_band.show()
+        #
+        # 如果没按Ctrl，清空之前的选择
+        if not (QApplication.keyboardModifiers() & Qt.ControlModifier):
+            if self.main_window:
+                self.main_window.clear_selection()
+
+    def mouseMoveEvent(self, event):
+        # print("GridContainer mouseMoveEvent")
+        # print(self.rubber_band.isHidden())
+        # print(event.button() == Qt.LeftButton)
+        if self.mouse_left_press and self.rubber_band.isHidden():
             self.selection_start = event.pos()
             self.rubber_band.setGeometry(QRect(self.selection_start, QSize()))
             self.rubber_band.show()
-
-            # 如果没按Ctrl，清空之前的选择
-            if not (QApplication.keyboardModifiers() & Qt.ControlModifier):
-                if self.main_window:
-                    self.main_window.clear_selection()
-
-    def mouseMoveEvent(self, event):
         if not self.rubber_band.isHidden():
             self.rubber_band.setGeometry(QRect(self.selection_start, event.pos()).normalized())
 
     def mouseReleaseEvent(self, event):
+        # print("GridContainer mouseReleaseEvent")
+        self.mouse_left_press = False
         if event.button() == Qt.LeftButton and not self.rubber_band.isHidden():
             self.rubber_band.hide()
             selection_rect = self.rubber_band.geometry()
@@ -133,7 +172,7 @@ class GridContainer(QWidget):
                         # 把容器的坐标映射到 grid 坐标系
                         container_geom = container.geometry()
                         if selection_rect.intersects(container_geom):
-                            img_label.is_selected = True
+                            img_label.is_selected = not img_label.is_selected
                             img_label.update_style()
                             self.main_window.selected_images.add(img_label)
 
@@ -281,7 +320,7 @@ class DatasetSorter(QMainWindow):
 
                 item_layout.addWidget(img_widget, 0, Qt.AlignCenter)
 
-                name_label = QLabel(filename[:20] + "..." if len(filename) > 20 else filename)
+                name_label = QLabel(filename[:25] + "..." if len(filename) > 25 else filename)
                 name_label.setAlignment(Qt.AlignCenter)
                 name_label.setStyleSheet("font-size: 11px; color: #333;")
                 name_label.setWordWrap(True)
@@ -292,6 +331,56 @@ class DatasetSorter(QMainWindow):
                 grid_layout.addWidget(item_container, row, col, Qt.AlignCenter)
             except Exception as e:
                 pass
+
+    def remove_images_from_ui(self, images_to_remove):
+        # 1. 立即停止界面刷新和事件处理（防止闪烁和冲突）
+        self.setUpdatesEnabled(False)
+
+        current_idx = self.tab_widget.currentIndex()
+        grid_layout = self.tabs_data[current_idx]['grid_layout']
+
+        try:
+            # 2. 预先找出所有受影响的容器，并断开它们与 ImageLabel 的联系
+            containers_to_kill = []
+            for img in images_to_remove:
+                # 这里的检查非常重要，防止对已销毁对象的二次操作
+                try:
+                    p = img.parentWidget()
+                    if p:
+                        containers_to_kill.append(p)
+                        # 关键：手动清除引用，防止后续事件触发
+                        img.setParent(None)
+                except RuntimeError:
+                    continue
+
+            # 3. 提取保留的组件
+            remaining_containers = []
+            for i in range(grid_layout.count()):
+                w = grid_layout.itemAt(i).widget()
+                if w and w not in containers_to_kill:
+                    remaining_containers.append(w)
+
+            # 4. 清空布局（只解除关联，不销毁）
+            while grid_layout.count() > 0:
+                grid_layout.takeAt(0)
+
+            # 5. 彻底销毁被删除的容器
+            for container in containers_to_kill:
+                container.deleteLater()
+
+            # 6. 重新填装保留的组件
+            for i, container in enumerate(remaining_containers):
+                row = i // self.grid_columns
+                col = i % self.grid_columns
+                grid_layout.addWidget(container, row, col, Qt.AlignCenter)
+
+            self.info_label.setText(f"总数：{len(remaining_containers)}")
+
+        finally:
+            # 7. 无论如何都要恢复界面刷新，否则界面会卡死
+            self.setUpdatesEnabled(True)
+            self.update()  # 强制重绘一次
+
 
     def handle_zoom(self, delta):
         old_cols = self.grid_columns
@@ -490,7 +579,8 @@ class DatasetSorter(QMainWindow):
             if len(self.operation_history) > self.max_history:
                 self.operation_history.pop(0)
 
-        self.refresh_tab(current_idx)
+        # self.refresh_tab(current_idx)
+        self.remove_images_from_ui(images_to_move)
 
         if success_count > 0:
             if target_idx == len(self.class_names):
@@ -507,7 +597,19 @@ def main():
         return
 
     # 【新增】选择 TXT 标签目录（可跳过）
-    txt_dir = QFileDialog.getExistingDirectory(None, "请选择 TXT 标签目录（点击取消则不展示置信度）")
+    raw_model_predict_path_txt = os.path.join(root_dir, "raw_model_predict_path.txt")
+    if os.path.exists(raw_model_predict_path_txt):
+        with open(raw_model_predict_path_txt, 'r') as txt_path_file:
+            txt_dir = txt_path_file.readline().strip()
+            txt_dir = os.path.join(txt_dir, "labels")
+            # print(txt_dir)
+        if not os.path.exists(txt_dir):
+            txt_dir = None
+    else:
+        txt_dir = None
+
+    if txt_dir is None:
+        txt_dir = QFileDialog.getExistingDirectory(None, "请选择 TXT 标签目录（点击取消则不展示置信度）")
     if not txt_dir:
         txt_dir = None
 
