@@ -37,8 +37,8 @@ def balance_amount(root_path:str) -> dict[str, list]:
     return output_list
 
 if __name__ == "__main__":
-    root_dir = r"D:\A_myData\RC26-Vision\dataset\juanZhou_cls_mix1"
-    output_dir = r"D:\A_myData\RC26-Vision\dataset\juanZhou_cls_mix2"
+    root_dir = r"D:\A_myData\RC26-Vision\dataset\juanZhou_cls_blue_mix1"
+    output_dir = r"D:\A_myData\RC26-Vision\dataset\juanZhou_cls_blue_mix2"
     os.makedirs(output_dir, exist_ok=True)
 
     copy_dirs(root_dir, output_dir)
