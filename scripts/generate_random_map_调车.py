@@ -2,7 +2,7 @@ import os
 import random
 import json
 
-def generate_random_map_list(block_list=None) -> list[int]:
+def generate_random_map_list(block_list=None) -> list:
 
     if block_list is None:
         block_list = [
@@ -85,6 +85,9 @@ def calculate_difference(list1, list2, weights=(0.25, 0.35, 0.4)) -> dict:
     for m, idx1 in enumerate(list1):
         if idx1 == 32:
             continue
+        elif idx1 == list2[m]:
+            d_list.append(0)
+            continue
         for n, idx2 in enumerate(list2):
             if idx2 == 32:
                 continue
@@ -94,12 +97,14 @@ def calculate_difference(list1, list2, weights=(0.25, 0.35, 0.4)) -> dict:
                 # 计算相同类别的曼哈顿距离
                 d = abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
                 d_list.append(d)
+                print(f"{m} {n} : {d}")
     if len(d_list) == 0:
         d3 = 5
     else:
         avg_d = sum(d_list) / len(d_list)
         d3 = avg_d
 
+    # print(d_list)
     # if d3 == 5:
     #     print(f"d3 = 5 : {list2}")
 
@@ -152,8 +157,11 @@ def calculate_difference(list1, list2, weights=(0.25, 0.35, 0.4)) -> dict:
         "总差异值": round(total_diff, 2)
     }
 
-def read_from_json(json_path:str) -> list[dict]:
+def read_from_json(json_path:str) -> list:
     if not os.path.exists(json_path):
+        root_path = os.path.split(json_path)[0]
+        os.makedirs(root_path, exist_ok=True)
+        # print(root_path)
         open(json_path, 'w').close()
     with open(json_path, 'r') as json_file:
         json_file.seek(0)
@@ -163,7 +171,7 @@ def read_from_json(json_path:str) -> list[dict]:
         data = json.load(json_file)
     return data
 
-def write_to_json(input_map_list:list[dict], output_json_path:str) -> None:
+def write_to_json(input_map_list:list, output_json_path:str) -> None:
     root_path = os.path.split(output_json_path)[0]
     # print(root_path)
     os.makedirs(root_path, exist_ok=True)
@@ -171,48 +179,73 @@ def write_to_json(input_map_list:list[dict], output_json_path:str) -> None:
     if not os.path.exists(output_json_path):
         open(output_json_path, 'w').close()
 
-    with open(output_json_path, 'r') as output_file:
-        # json.dump(input_map_list, output_file, indent=4)
-        output_file.seek(0)
-        ori_data = output_file.readlines()
+    with open(output_json_path, 'w') as output_file:
+        output_file.write("[\n")
+        for k, x in enumerate(input_map_list):
+            map = x["map"]
+            avg_diff = x["avg_diff"]
+            data = (f"    {{\n"
+                    f"        \"map\": {map},\n"
+                    f"        \"avg_diff\": {avg_diff}\n"
+                    f"    }}")
+            if k != len(input_map_list) - 1:
+                data += ",\n"
+            output_file.write(data)
+        output_file.write("\n]")
 
-    try:
-        with open(output_json_path, 'w') as output_file:
-            # print(len(output_file.readlines()))
-            if not len(ori_data) == 0:
-                ori_data.pop()
-                output_file.writelines(ori_data)
-                output_file.write(",\n")
-            else:
-                output_file.write("[\n")
-            for k, x in enumerate(input_map_list):
-                map = x["map"]
-                avg_diff = x["avg_diff"]
-                data = (f"    {{\n"
-                        f"        \"map\": {map},\n"
-                        f"        \"avg_diff\": {avg_diff}\n"
-                        f"    }}")
-                if k != len(input_map_list) - 1:
-                    data += ",\n"
-                output_file.write(data)
-            output_file.write("\n]")
-    except:
-        print("ERROR")
-        print(f"raw_data: \n"
-              f"{ori_data}")
+    # with open(output_json_path, 'r') as output_file:
+    #     # json.dump(input_map_list, output_file, indent=4)
+    #     output_file.seek(0)
+    #     ori_data = output_file.readlines()
+    #
+    # try:
+    #     with open(output_json_path, 'w') as output_file:
+    #         # print(len(output_file.readlines()))
+    #         if not len(ori_data) == 0:
+    #             ori_data.pop()
+    #             output_file.writelines(ori_data)
+    #             output_file.write(",\n")
+    #         else:
+    #             output_file.write("[\n")
+    #         for k, x in enumerate(input_map_list):
+    #             map = x["map"]
+    #             avg_diff = x["avg_diff"]
+    #             data = (f"    {{\n"
+    #                     f"        \"map\": {map},\n"
+    #                     f"        \"avg_diff\": {avg_diff}\n"
+    #                     f"    }}")
+    #             if k != len(input_map_list) - 1:
+    #                 data += ",\n"
+    #             output_file.write(data)
+    #         output_file.write("\n]")
+    # except:
+    #     print("ERROR")
+    #     print(f"raw_data: \n"
+    #           f"{ori_data}")
 
 if __name__ == "__main__":
 
     # 设置种子
-    random.seed(234645)
+    random.seed(234645)   # 最好每次都修改一个值
+
+    # 方块序列
+    block_list = [
+        [1],
+        [2, 3, 4, 5, 6],
+        [2, 3, 4, 5, 6],
+        [7, 8, 9, 10, 11],
+        [12, 13, 14, 15, 16],
+        [17, 18, 19, 20, 21],
+        [22, 23, 24, 25, 26],
+        [27, 28, 29, 30, 31],
+        [32],
+        [32],
+        [32],
+        [32]
+    ]
 
     # 保存地图的json路径
-    save_json_path = r"D:\A_myData\RC26-Vision\Pytorch\pytorch\scripts\test_file\output\test.json"
-
-    # 初始地图
-    # origin_map = generate__map_list()
-    # origin_map = [1,7,2,12,3,17,22,27,32,32,32,32]
-    origin_map = [32, 32, 32, 28, 13, 26, 32, 5, 4, 10, 19, 1]
+    save_json_path = r"D:\A_myData\RC26-Vision\Pytorch\pytorch\scripts\test_file\output\test1.json"
 
     # 差异值阈值，差异值越大，地图差的越多
     difference_thres = 40
@@ -223,22 +256,37 @@ if __name__ == "__main__":
     # 各差异值权重
     empty_diff, label_diff, same_label_position_diff = 0.25, 0.35, 0.4
 
-    # 初始化输出地图
-    best_output: list[dict] = [{
-        "map": origin_map,
-        "avg_diff": 0
-    }]
-    # print(best_output)
+    # 可设置初始地图
+    best_output = []
+    # best_output.append({
+    #     "map": [32, 32, 32, 28, 13, 26, 32, 5, 4, 10, 19, 1],
+    #     "avg_diff": 101
+    # })
 
     # 读取之前生成过的地图
     [best_output.append(x) for x in read_from_json(save_json_path)]
+    old_map_amount = len(best_output)
+    # 为区分不同批次，之前生成的地图avg_diff在原来基础上加100
+    for best in best_output:
+        best["avg_diff"] += 100
+
+    # 如果json为空，且未设置初始地图，则随机生成一个
+    if len(best_output) == 0:
+        origin_map = generate_random_map_list(block_list)
+        best_output.append({
+            "map": origin_map,
+            "avg_diff": 101
+        })
 
     # 迭代生成地图
-    print(f"origin map:{origin_map}")
+    # print(f"origin map:{best_output}")
+    print("origin map:（为了区分不同批次生成的地图，avg_diff会在原来基础上加100）")
+    [print(x) for x in best_output]
+    print(f"总数: {old_map_amount}")
     for i in range(optimize_times):
 
         # 生成随机地图
-        temp_map = generate_random_map_list()
+        temp_map = generate_random_map_list(block_list)
         is_like = False
         difference_sum = 0
 
@@ -258,27 +306,46 @@ if __name__ == "__main__":
                 "map": temp_map,
                 "avg_diff": difference_sum / total
             })
-    best_output.pop(0)
 
     # 按avg_diff由大到小排序
     def sort_best_output(map_dict: dict):
         return map_dict["avg_diff"]
     best_output.sort(key=sort_best_output, reverse=True) # 由大到小排序
 
+    # 打印输出生成的地图
+    print("------------------------------")
+    print("generate map: ")
+    new_map_amount = 0
     for best in best_output:
-        print(best)
+        if best["avg_diff"] <= 100:
+            print(best)
+            new_map_amount += 1
 
-    # 询问用户是否写入json
-    user_input = input(f"是否将本次结果写入json? 1 是 2 否\n")
-    user_input = user_input.strip()
-    # print(user_input)
-    while user_input != '1' and user_input != '2':
-        user_input = input(f"输入有误，必须是1或2(1 是 2 否)\n")
-        user_input = user_input.strip()
-        # print(f"user:{user_input}")
-    if user_input == '1':
-        write_to_json(best_output, save_json_path)
-        print(f"结果已写入： {save_json_path}")
+    if not new_map_amount:
+        print("生成了0个大于阈值的地图，请调整阈值!")
+    else:
+        # 询问用户是否写入json
+        user_input = input(f"请输入保存至json的地图数量 -1: 全部, 0-n: 数量\n")
+        input_is_legal = False
+        while not input_is_legal:
+            try:
+                user_input = int(user_input.strip())
+                if -1 <= user_input <= new_map_amount:
+                    input_is_legal = True
+            except ValueError as e:
+                user_input = input(f"输入有误，必须是大于-1小于生成数量的整数\n")
+                input_is_legal = False
+        # print(user_input)
+
+        if user_input == -1:
+
+            write_to_json(best_output, save_json_path)
+            print(f"结果已写入： {save_json_path}")
+        elif user_input > 0:
+
+            write_to_json(best_output, save_json_path)
+            print(f"结果已写入： {save_json_path}")
+
 
     # difference_dict = calculate_difference([1,7,2,12,3,17,22,27,32,32,32,32], [32,32,8,13,5,18,23,28,32,4,32,1])
     # difference_dict = calculate_difference([1, 19, 10, 32, 6, 6, 32, 15, 32, 31, 25, 32], [1, 19, 10, 32, 6, 6, 32, 15, 32, 31, 25, 32])
