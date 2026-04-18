@@ -1,23 +1,23 @@
 class Path:
     def __init__(self):
-        self.raw_data_root_path = r"D:\A_myData\RC26-Vision\dataset\A_car\raw_data\2026_4_9"
-        self.output_root_path = r"D:\A_myData\RC26-Vision\dataset\A_car\2026_4_9"
+        self.raw_data_root_path = r"D:\A_myData\RC26-Vision\dataset\A_car\raw_data\2026_4_18"
+        self.output_root_path = r"D:\A_myData\RC26-Vision\dataset\A_car\2026_4_18_blue"
 
 class Settings:
     def __init__(self):
-        self.start_idx = 0
-        self.test_data_start_idx = 1
-        self.generate_global_data = False
-        self.generate_roi_data = False
+        self.start_idx = 303
+        self.test_data_start_idx = 11
+        self.generate_global_data = True
+        self.generate_roi_data = True
         self.generate_class_dataset = True
         self.generate_corner_dataset = False
-        self.generate_test_global_data = False
+        self.generate_test_global_data = True
 
 class ClassConfig:
     def __init__(self):
-        self.model_path = r"D:\A_myData\RC26-Vision\Pytorch\yolo11\runs\classify\卷轴分类2_仿真_带旋转+现实_32类\weights\best.pt"
+        self.model_path = r"D:\A_myData\RC26-Vision\Pytorch\yolo11\runs\classify\卷轴分类_蓝色2_仿真+一组现实_32类\weights\best.pt"
         self.start_idx = 0
-        self.img_root_name = "juanZhou_car4_"   # 需手动加与序号的分隔符，如"_"
+        self.img_root_name = "juanZhou_car_blue2_"   # 需手动加与序号的分隔符，如"_"
         self.label_name_list =  ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
                                   "11", "12", "13", "14", "15", "16", "17", "18", "19", "20",
                                   "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32"]
