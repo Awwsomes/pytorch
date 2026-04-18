@@ -595,6 +595,7 @@ def main():
     root_dir = QFileDialog.getExistingDirectory(None, "请选择数据集根目录")
     if not root_dir:
         return
+    print(f"分类数据集目录：{root_dir}")
 
     # 【新增】选择 TXT 标签目录（可跳过）
     raw_model_predict_path_txt = os.path.join(root_dir, "raw_model_predict_path.txt")
@@ -605,13 +606,16 @@ def main():
             # print(txt_dir)
         if not os.path.exists(txt_dir):
             txt_dir = None
+            print(f"raw_model_predict_path.txt内存放的模型预测txt的路径不存在： {txt_dir}")
     else:
         txt_dir = None
+        print(f"raw_model_predict_path.txt未找到")
 
     if txt_dir is None:
         txt_dir = QFileDialog.getExistingDirectory(None, "请选择 TXT 标签目录（点击取消则不展示置信度）")
     if not txt_dir:
         txt_dir = None
+    print(f"最终的模型存放txt的路径：{txt_dir}")
 
     subfolders = [f.name for f in os.scandir(root_dir) if f.is_dir()]  # scandir和listdir有啥区别
     if "垃圾桶" in subfolders:
@@ -627,6 +631,7 @@ def main():
         return
 
     class_names = [x.strip() for x in text.split(',')]
+    print(f"输入的分类数据集类别： {class_names}")
 
     window = DatasetSorter(root_dir, class_names, txt_dir)
 
