@@ -19,7 +19,6 @@ from class_about.change_txt_format import change_txt_format
 from txt_to_json import txt_to_json
 
 from config.car_dataset_config import config
-from config.car_dataset_config import Config
 
 def generate_global_dataset(root_dir:str, output_root_path:str, start_idx:int):
     """
@@ -87,17 +86,10 @@ def generate_global_dataset(root_dir:str, output_root_path:str, start_idx:int):
         #     print(f"idx 137: {root}")
 
         # 只处理第一个文件，因为按照格式只会有一个文件
-        # 拷贝图片
-        old_img_path = os.path.join(root,global_imgs_list[0])
-        _,img_ext = os.path.splitext(global_imgs_list[0])
-        img_new_name = f"image_{idx}{img_ext}"
-        new_img_path = os.path.join(output_root_path, "images", img_new_name)
-        # print(new_img_path)
-        shutil.copy(old_img_path,new_img_path)
-
         # 读取txt，生成json
         # 拼接路径
         old_txt_path = os.path.join(root, txts_list[0])
+        # print(old_txt_path)
         new_json_path = os.path.join(output_root_path, "labels", f"label_{idx}.json")
         # print(new_json_path)
 
@@ -108,7 +100,8 @@ def generate_global_dataset(root_dir:str, output_root_path:str, start_idx:int):
             # 读取txt内容
             lines = txt_file.readlines()
             if not len(lines) == 3:
-                print(f"[ERROR] rt.txt 's format seems wrong.")
+                print(f"[ERROR] rt.txt 's format seems wrong, skip: {old_txt_path}")
+                continue
             rvec = [float(x.strip()) for x in lines[0].strip().split(",")]
             tvec = [float(x.strip()) for x in lines[1].strip().split(",")]
             labels = [int(x) for x in lines[2].strip().split()]
@@ -135,6 +128,14 @@ def generate_global_dataset(root_dir:str, output_root_path:str, start_idx:int):
                             f"    \"labels\": {labels_convert}\n"
                             f"}}")
             json_file.writelines(json_content)
+
+        # 拷贝图片
+        old_img_path = os.path.join(root, global_imgs_list[0])
+        _, img_ext = os.path.splitext(global_imgs_list[0])
+        img_new_name = f"image_{idx}{img_ext}"
+        new_img_path = os.path.join(output_root_path, "images", img_new_name)
+        # print(new_img_path)
+        shutil.copy(old_img_path, new_img_path)
 
         # 序号加一
         idx += 1
@@ -432,7 +433,7 @@ def yolov5_detect_parse_opt(model_path:str, imgs_path:str, data_yaml:str,conf_th
     parser = argparse.ArgumentParser()
     parser.add_argument("--weights", nargs="+", type=str, default=model_path, help="model path or triton URL")
     parser.add_argument("--source", type=str, default=imgs_path, help="file/dir/URL/glob/screen/0(webcam)")
-    parser.add_argument("--data", type=str, default=r"D:\A_myData\Pytorch\pytorch\dataset_yaml\corner8.yaml", help="(optional) dataset.yaml path")
+    parser.add_argument("--data", type=str, default=data_yaml, help="(optional) dataset.yaml path")
     parser.add_argument("--imgsz", "--img", "--img-size", nargs="+", type=int, default=[640], help="inference size h,w")
     parser.add_argument("--conf-thres", type=float, default=conf_thres, help="confidence threshold")
     parser.add_argument("--iou-thres", type=float, default=iou_thres, help="NMS IoU threshold")
@@ -511,6 +512,13 @@ if __name__ == "__main__":
         raise TypeError(f"[ERROR] Not a class model: {config.class_config.model_path}")
     if not os.path.exists(config.path.raw_data_root_path):
         raise FileExistsError(f"{config.path.raw_data_root_path} not exist.")
+
+    if os.path.exists(config.path.output_root_path):
+        user_input = input(f"输出文件夹{os.path.basename(config.path.output_root_path)}已存在，是否继续生成? 1 是 2 否\n")
+        while user_input != '1' and user_input != '2':
+            user_input = input(f"输入有误： 1 是 2 否")
+        if user_input == '2':
+            sys.exit()
 
     os.makedirs(os.path.join(config.path.output_root_path,"images"), exist_ok=True)
     os.makedirs(os.path.join(config.path.output_root_path,"labels"), exist_ok=True)
