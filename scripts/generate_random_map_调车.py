@@ -21,7 +21,7 @@ def generate_random_map_list(block_list=None) -> list:
         ]
     elif len(block_list) == 0:
         raise ValueError("generate_random_map_list: 输入方块列表为空")
-    elif [True if len(x) == 0 else False for x in block_list]:
+    elif [True for x in block_list if len(x) == 0]:
         raise ValueError("generate_random_map_list: 输入方块列表中有方块无类别")
 
     output_list = [random.sample(x, 1)[0] for x in block_list]
@@ -73,7 +73,6 @@ def calculate_difference(list1, list2, weights=(0.25, 0.35, 0.4)) -> dict:
     #     print(f"d2 = 14 : {list2}")
 
     # -------------------------- 3. 相同类别位置差异值 (d3) --------------------------
-    # TODO: 有bug，完全相同的序列，计算出来差异值是4
     def pos_to_coord(pos):
         """将1-12的位置编号转换为地图坐标(x, y)"""
         idx = pos - 1  # 转换为0-11的索引
@@ -97,7 +96,7 @@ def calculate_difference(list1, list2, weights=(0.25, 0.35, 0.4)) -> dict:
                 # 计算相同类别的曼哈顿距离
                 d = abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
                 d_list.append(d)
-                print(f"{m} {n} : {d}")
+                # print(f"{m} {n} : {d}")
     if len(d_list) == 0:
         d3 = 5
     else:
@@ -171,24 +170,36 @@ def read_from_json(json_path:str) -> list:
         data = json.load(json_file)
     return data
 
-def write_to_json(input_map_list:list, output_json_path:str) -> None:
+def write_to_json(input_map_list:list, need_map_amount:int, output_json_path:str) -> None:
+    # 输出路径
     root_path = os.path.split(output_json_path)[0]
     # print(root_path)
     os.makedirs(root_path, exist_ok=True)
+
+    if need_map_amount == -1:
+        map_list = input_map_list
+    elif need_map_amount > 0:
+        # 找新的地图，取指定数量，拼接回去
+        new_map_list = [m for m in input_map_list if 0 <= m["avg_diff"] <= 100]
+        old_map_list = [m for m in input_map_list if 100 < m["avg_diff"]]
+        new_map_list = new_map_list[:need_map_amount]
+        map_list = old_map_list + new_map_list
+    else:
+        return
 
     if not os.path.exists(output_json_path):
         open(output_json_path, 'w').close()
 
     with open(output_json_path, 'w') as output_file:
         output_file.write("[\n")
-        for k, x in enumerate(input_map_list):
+        for k, x in enumerate(map_list):
             map = x["map"]
             avg_diff = x["avg_diff"]
             data = (f"    {{\n"
                     f"        \"map\": {map},\n"
                     f"        \"avg_diff\": {avg_diff}\n"
                     f"    }}")
-            if k != len(input_map_list) - 1:
+            if k != len(map_list) - 1:
                 data += ",\n"
             output_file.write(data)
         output_file.write("\n]")
@@ -226,12 +237,15 @@ def write_to_json(input_map_list:list, output_json_path:str) -> None:
 if __name__ == "__main__":
 
     # 设置种子
-    random.seed(234645)   # 最好每次都修改一个值
+    random.seed(6756803)   # 最好每次都修改一个值
+
+    # 保存地图的json路径
+    save_json_path = r"D:\A_myData\RC26-Vision\Pytorch\pytorch\scripts\test_file\output\test1.json"
 
     # 方块序列
     block_list = [
         [1],
-        [2, 3, 4, 5, 6],
+        [1],
         [2, 3, 4, 5, 6],
         [7, 8, 9, 10, 11],
         [12, 13, 14, 15, 16],
@@ -244,11 +258,8 @@ if __name__ == "__main__":
         [32]
     ]
 
-    # 保存地图的json路径
-    save_json_path = r"D:\A_myData\RC26-Vision\Pytorch\pytorch\scripts\test_file\output\test1.json"
-
     # 差异值阈值，差异值越大，地图差的越多
-    difference_thres = 40
+    difference_thres = 38
 
     # 设置迭代次数
     optimize_times = 10000
@@ -322,7 +333,7 @@ if __name__ == "__main__":
             new_map_amount += 1
 
     if not new_map_amount:
-        print("生成了0个大于阈值的地图，请调整阈值!")
+        print("生成了0个大于阈值的地图，请调整阈值并更换随机数种子!")
     else:
         # 询问用户是否写入json
         user_input = input(f"请输入保存至json的地图数量 -1: 全部, 0-n: 数量\n")
@@ -337,13 +348,9 @@ if __name__ == "__main__":
                 input_is_legal = False
         # print(user_input)
 
-        if user_input == -1:
-
-            write_to_json(best_output, save_json_path)
-            print(f"结果已写入： {save_json_path}")
-        elif user_input > 0:
-
-            write_to_json(best_output, save_json_path)
+        # 写入
+        if user_input != 0:
+            write_to_json(best_output, user_input, save_json_path)
             print(f"结果已写入： {save_json_path}")
 
 
