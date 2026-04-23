@@ -642,4 +642,5 @@ def main():
     sys.exit(app.exec_())
 
 if __name__ == "__main__":
+    # TODO：右键能拖出拖拽框选的框，但是松手框却不会消失，而是留在那里，再次点击鼠标左键才消失
     main()

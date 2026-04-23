@@ -203,7 +203,7 @@ if __name__ == "__main__":
     dist_coeffs = np.array([[0.0], [0.0], [0.0], [0.0], [0.0]], dtype=np.float32)
     # dist_coeffs = np.array([[-0.0383938069100753],[1.68404077315427],[0],[0],[0]], dtype=np.float32)
 
-    root_dir = r"D:\A_myData\RC26-Vision\calibration\world_to_camera\260320"
+    root_dir = r"D:\A_myData\RC26-Vision\calibration\world_to_camera\260421"
     calibration(root_dir)
 
     # # ----------------------

@@ -28,12 +28,12 @@ def random_take_some_files(input_path:str, output_path:str, n:int, mode:str):
 
 
 if __name__ == "__main__":
-    process_list = ["32"]
-    root_dir = r"/home/awwsome/datasets/juanZhou_gazebo7"
-    output_root_dir = r"/home/awwsome/datasets/juanZhou_gazebo7"
+    process_list = ["1"]
+    root_dir = r"D:\A_myData\RC26-Vision\dataset\juanZhou_cls_gazebo_real_rotate1"
+    output_root_dir = r"D:\A_myData\RC26-Vision\dataset\juanZhou_cls_mix5"
     for process_dir in tqdm(process_list):
         dir_path = os.path.join(root_dir, process_dir)
         output_dir = os.path.join(output_root_dir, process_dir)
-        need_files_num = 40
+        need_files_num = 2850-1452
 
-        random_take_some_files(dir_path, output_dir, need_files_num,"delete")
+        random_take_some_files(dir_path, output_dir, need_files_num,"copy")

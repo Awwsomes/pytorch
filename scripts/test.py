@@ -184,11 +184,89 @@
 # num1 = int(num)
 # print(num1)
 
-from generate_random_map_调车 import calculate_difference
+# from generate_random_map_调车 import calculate_difference
+#
+# # difference_dict = calculate_difference([1,7,2,12,3,17,22,27,32,32,32,32], [32,32,8,13,5,18,23,28,32,4,32,1])
+# difference_dict = calculate_difference([1, 19, 10, 32, 6, 6, 32, 15, 32, 31, 25, 32], [1, 19, 10, 32, 6, 6, 32, 15, 32, 31, 25, 32])
+# print(difference_dict)
 
-# difference_dict = calculate_difference([1,7,2,12,3,17,22,27,32,32,32,32], [32,32,8,13,5,18,23,28,32,4,32,1])
-difference_dict = calculate_difference([1, 19, 10, 32, 6, 6, 32, 15, 32, 31, 25, 32], [1, 19, 10, 32, 6, 6, 32, 15, 32, 31, 25, 32])
-print(difference_dict)
+from generate_car_datasets import generate_11class_dataset
+generate_11class_dataset(r"D:\A_myData\RC26-Vision\Pytorch\yolo11\runs\classify\卷轴分类4_4类\weights\best.pt",
+                         r"D:\A_myData\RC26-Vision\dataset\juanZhou_log\2026_1_12_new",
+                         r"D:\A_myData\RC26-Vision\dataset\juanZhou_log\2026_1_12_predict",
+                         0,
+                         "juanZhou_log2_",
+                         ["1", "2", "3", "4"],
+                         r"D:\A_myData\RC26-Vision\Pytorch\yolo11\runs\classify")
+
+# import numpy as np
+#
+# # world_to_lidar = [[ 0.847164, -0.528611, 0.0536916, -1.91217],
+# #  [0.531232,  0.840724, -0.104763, 0.0458141],
+# # [0.0102391,  0.117274,  0.993047, -0.720668],
+# #         [0,         0,         0,         1]]
+#
+# world_to_lidar =  [ [ 0.847164,    -0.53127, -0.00805017,    -1.86391],
+# [   0.531232,    0.847202, -0.00643553 ,  -0.028872],
+# [  0.0102391 , 0.00117545  ,  0.999947 ,  -0.838359],
+#          [ 0    ,      0      ,     0     ,      1]]
+#
+# world_to_camera = [[-0.558015762354151, -0.8297200672348306, -0.013528451210104597, 0.1393677061599544],
+# [0.00704477735943726, 0.011565483633255491, -0.9999083011458028, 1.288624180773572],
+# [0.8298004459364142, -0.5580598978749123, -0.0006085290222784812, -1.5566266756168856],
+# [0, 0, 0, 1]]
+#
+# output_matrix = world_to_camera @ np.linalg.inv(world_to_lidar)
+#
+# print(output_matrix)
+#
+# print(np.arange(1, 2))
+
+# import os
+# import shutil
+#
+# path1 = r"D:\A_myData\RC26-Vision\dataset\juanZhou_cls_mix4"
+# path2 = r"D:\A_myData\RC26-Vision\dataset\juanZhou_cls_mix5"
+#
+# list1 = os.listdir(path1)
+# list1 = [x for x in list1 if os.path.isdir(os.path.join(path1, x))]
+# list1.sort(key=int)
+# for dir1 in list1:
+#     imgs = os.listdir(os.path.join(path1, dir1))
+#     if dir1 == "1":
+#         new_name = dir1
+#     elif 1 < int(dir1) < 17:
+#         new_name = "2"
+#     elif 17 <= int(dir1) <= 31:
+#         new_name = "3"
+#     else:
+#         new_name = "4"
+#     print(f"{dir1} -> {new_name}")
+#     new_path = os.path.join(path2, new_name)
+#     os.makedirs(new_path, exist_ok=True)
+#     for img in imgs:
+#         old_img_path = os.path.join(path1, dir1, img)
+#         new_img_path = os.path.join(new_path, img)
+#         shutil.copy2(old_img_path, new_img_path)
+
+# import os
+# import shutil
+#
+# path = r"D:\A_myData\RC26-Vision\dataset\juanZhou_log\2026_1_12"
+# output_path = r"D:\A_myData\RC26-Vision\dataset\juanZhou_log\2026_1_12_new"
+# os.makedirs(output_path, exist_ok=True)
+# for root,dirs,files in os.walk(path):
+#     # print(root, dirs, files)
+#     if len(files) == 0:
+#         continue
+#     for file in files:
+#         if not os.path.splitext(file)[1] in [".png", ".jpg", ".jpeg"]:
+#             continue
+#         elif file.find("hsv") != -1:
+#             continue
+#         old_path = os.path.join(root, file)
+#         new_path = os.path.join(output_path, file)
+#         shutil.copy2(old_path, new_path)
 
 # import os
 # import numpy as np
