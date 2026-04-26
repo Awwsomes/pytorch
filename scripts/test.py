@@ -190,14 +190,14 @@
 # difference_dict = calculate_difference([1, 19, 10, 32, 6, 6, 32, 15, 32, 31, 25, 32], [1, 19, 10, 32, 6, 6, 32, 15, 32, 31, 25, 32])
 # print(difference_dict)
 
-from generate_car_datasets import generate_11class_dataset
-generate_11class_dataset(r"D:\A_myData\RC26-Vision\Pytorch\yolo11\runs\classify\卷轴分类4_4类\weights\best.pt",
-                         r"D:\A_myData\RC26-Vision\dataset\juanZhou_log\2026_1_12_new",
-                         r"D:\A_myData\RC26-Vision\dataset\juanZhou_log\2026_1_12_predict",
-                         0,
-                         "juanZhou_log2_",
-                         ["1", "2", "3", "4"],
-                         r"D:\A_myData\RC26-Vision\Pytorch\yolo11\runs\classify")
+# from generate_car_datasets import generate_11class_dataset
+# generate_11class_dataset(r"D:\A_myData\RC26-Vision\Pytorch\yolo11\runs\classify\卷轴分类4_4类\weights\best.pt",
+#                          r"D:\A_myData\RC26-Vision\dataset\juanZhou_log\2026_1_12_new",
+#                          r"D:\A_myData\RC26-Vision\dataset\juanZhou_log\2026_1_12_predict",
+#                          0,
+#                          "juanZhou_log2_",
+#                          ["1", "2", "3", "4"],
+#                          r"D:\A_myData\RC26-Vision\Pytorch\yolo11\runs\classify")
 
 # import numpy as np
 #
@@ -267,6 +267,169 @@ generate_11class_dataset(r"D:\A_myData\RC26-Vision\Pytorch\yolo11\runs\classify\
 #         old_path = os.path.join(root, file)
 #         new_path = os.path.join(output_path, file)
 #         shutil.copy2(old_path, new_path)
+
+# import sys
+# from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsView,
+#                              QGraphicsScene, QFileDialog)
+# from PyQt5.QtGui import QPixmap
+# from PyQt5.QtCore import Qt
+#
+#
+# class ImageViewer(QMainWindow):
+#     def __init__(self):
+#         super().__init__()
+#         self.view = QGraphicsView()
+#         self.scene = QGraphicsScene()
+#         self.view.setScene(self.scene)
+#         self.setCentralWidget(self.view)
+#
+#         # 启用滚轮缩放
+#         self.view.setDragMode(QGraphicsView.ScrollHandDrag)  # 拖拽平移
+#         self.view.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)  # 光标中心缩放
+#         self.view.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
+#
+#     def wheelEvent(self, event):
+#         # 滚轮缩放逻辑
+#         zoom_factor = 1.15 if event.angleDelta().y() > 0 else 0.85
+#         self.view.scale(zoom_factor, zoom_factor)
+#
+#     def open_image(self, path):
+#         pixmap = QPixmap(path)
+#         self.scene.clear()
+#         self.scene.addPixmap(pixmap)
+#         self.view.fitInView(self.scene.itemsBoundingRect(), Qt.KeepAspectRatio)
+#
+#
+# if __name__ == '__main__':
+#     app = QApplication(sys.argv)
+#     viewer = ImageViewer()
+#     viewer.show()
+#     viewer.open_image(r'D:\A_myData\RC26-Vision\Pytorch\pytorch\scripts\test_file\img_example.png')  # 替换为你的图片路径
+#     sys.exit(app.exec_())
+
+# import matplotlib.pyplot as plt
+# import matplotlib.image as mpimg
+#
+# # 读取并显示图片
+# img = mpimg.imread(r'D:\A_myData\RC26-Vision\Pytorch\pytorch\scripts\test_file\img_example.png')
+# plt.imshow(img)
+# plt.axis('off')  # 隐藏坐标轴
+# plt.show()  # 开启交互窗口，支持滚轮缩放、拖拽平移
+
+# import cv2
+# import numpy as np
+#
+#
+# class ZoomableImage:
+#     def __init__(self, image_path):
+#         self.img = cv2.imread(image_path)
+#         self.zoom_level = 1.0
+#         self.window_name = "Zoomable Image"
+#         cv2.namedWindow(self.window_name)
+#         cv2.setMouseCallback(self.window_name, self.mouse_callback)
+#         self.show_image()
+#
+#     def mouse_callback(self, event, x, y, flags, param):
+#         if event == cv2.EVENT_MOUSEWHEEL:
+#             # 滚轮事件：向上放大，向下缩小
+#             if flags > 0:
+#                 self.zoom_level *= 1.1
+#             else:
+#                 self.zoom_level *= 0.9
+#             self.zoom_level = max(0.1, min(self.zoom_level, 10.0))  # 限制缩放范围
+#             self.show_image()
+#
+#     def show_image(self):
+#         # 缩放图像
+#         h, w = self.img.shape[:2]
+#         new_h, new_w = int(h * self.zoom_level), int(w * self.zoom_level)
+#         zoomed_img = cv2.resize(self.img, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
+#         cv2.imshow(self.window_name, zoomed_img)
+#
+#
+# if __name__ == '__main__':
+#     zoomer = ZoomableImage(r'D:\A_myData\RC26-Vision\Pytorch\pytorch\scripts\test_file\img_example.png')
+#     while cv2.waitKey(0) & 0xFF == 27:  # ESC退出
+#         cv2.destroyAllWindows()
+#         break
+
+# import tkinter as tk
+# from tkinter import filedialog
+# from PIL import Image, ImageTk
+#
+#
+# class TkImageViewer:
+#     def __init__(self, root):
+#         self.root = root
+#         self.canvas = tk.Canvas(root, bg='black')
+#         self.canvas.pack(fill=tk.BOTH, expand=True)
+#
+#         self.scale = 1.0
+#         self.orig_img = None
+#         self.tk_img = None
+#
+#         # 绑定滚轮事件（Windows/Linux/Mac兼容）
+#         self.canvas.bind("<MouseWheel>", self.on_zoom)  # Windows
+#         self.canvas.bind("<Button-4>", self.on_zoom)  # Linux
+#         self.canvas.bind("<Button-5>", self.on_zoom)  # Linux
+#         self.canvas.bind("<B1-Motion>", self.on_drag)  # 拖拽平移
+#         self.canvas.bind("<ButtonPress-1>", self.on_press)
+#
+#         self.offset_x = 0
+#         self.offset_y = 0
+#         self.last_x = 0
+#         self.last_y = 0
+#
+#     def on_press(self, event):
+#         self.last_x = event.x
+#         self.last_y = event.y
+#
+#     def on_drag(self, event):
+#         dx = event.x - self.last_x
+#         dy = event.y - self.last_y
+#         self.offset_x += dx
+#         self.offset_y += dy
+#         self.last_x = event.x
+#         self.last_y = event.y
+#         self.update_image()
+#
+#     def on_zoom(self, event):
+#         # 滚轮缩放逻辑
+#         delta = 1.1 if (event.delta > 0 or event.num == 4) else 0.9
+#         self.scale *= delta
+#         self.scale = max(0.1, min(self.scale, 5.0))  # 限制缩放范围
+#         self.update_image()
+#
+#     def open_image(self, path):
+#         self.orig_img = Image.open(path)
+#         self.update_image()
+#
+#     def update_image(self):
+#         if self.orig_img:
+#             # 缩放图像
+#             w, h = self.orig_img.size
+#             new_w = int(w * self.scale)
+#             new_h = int(h * self.scale)
+#             resized_img = self.orig_img.resize((new_w, new_h), Image.LANCZOS)
+#             self.tk_img = ImageTk.PhotoImage(resized_img)
+#
+#             # 更新画布
+#             self.canvas.delete("all")
+#             self.canvas.create_image(self.offset_x, self.offset_y,
+#                                      image=self.tk_img, anchor=tk.NW)
+#
+#
+# if __name__ == '__main__':
+#     root = tk.Tk()
+#     root.title("Tkinter Image Viewer")
+#     root.geometry("800x600")
+#     viewer = TkImageViewer(root)
+#     viewer.open_image(r'D:\A_myData\RC26-Vision\Pytorch\pytorch\scripts\test_file\img_example.png')  # 替换为你的图片路径
+#     root.mainloop()
+
+# from generate_random_map_调车 import map_12_to_4
+# map1 = [1,2,3,9,10,16,17,18,19,28,29,30,31,32,32,32]
+# print(map_12_to_4(map1))
 
 # import os
 # import numpy as np
