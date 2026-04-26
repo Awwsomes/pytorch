@@ -28,6 +28,20 @@ def generate_random_map_list(block_list=None) -> list:
     random.shuffle(output_list)
     return output_list
 
+def map_12_to_4(input_map_list:list) -> list:
+    output_map_list = []
+    for idx in input_map_list:
+        if 2 <= idx <= 16:
+            output_map_list.append(2)
+        elif 17 <= idx <= 31:
+            output_map_list.append(3)
+        elif idx == 32:
+            output_map_list.append(4)
+        else:
+            output_map_list.append(idx)
+
+    return output_map_list
+
 def calculate_difference(list1, list2, weights=(0.25, 0.35, 0.4)) -> dict:
     """
     计算两个12位置类别列表的差异值
@@ -197,6 +211,7 @@ def write_to_json(input_map_list:list, need_map_amount:int, output_json_path:str
             avg_diff = x["avg_diff"]
             data = (f"    {{\n"
                     f"        \"map\": {map},\n"
+                    f"        \"map_4\": {map_12_to_4(map)},\n"
                     f"        \"avg_diff\": {avg_diff}\n"
                     f"    }}")
             if k != len(map_list) - 1:
@@ -286,6 +301,7 @@ if __name__ == "__main__":
         origin_map = generate_random_map_list(block_list)
         best_output.append({
             "map": origin_map,
+            "map_4": map_12_to_4(origin_map),
             "avg_diff": 101
         })
 
@@ -315,6 +331,7 @@ if __name__ == "__main__":
             total = len(best_output)
             best_output.append({
                 "map": temp_map,
+                "map_4": map_12_to_4(temp_map),
                 "avg_diff": difference_sum / total
             })
 
