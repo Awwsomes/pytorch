@@ -71,9 +71,12 @@ def convert_label(json_dir, save_dir, classes: list):
                 continue
 
 if __name__ == "__main__":
-    json_dir = r"D:\A_myData\RC26-Vision\dataset\corner_blue1\jsons"
-    save_dir = r"D:\A_myData\RC26-Vision\dataset\corner_blue1\labels"
-    classes = ["corner", "trash"]
+    json_dir = r"D:\A_myData\RC26-Vision\dataset\juanZhou_obb5\jsons"
+    save_dir = r"D:\A_myData\RC26-Vision\dataset\juanZhou_obb5\labels"
+    # classes = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
+    #           "11", "12", "13", "14", "15", "16", "17", "18", "19", "20",
+    #           "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31"]
+    classes = ["2"]
 
     if not os.path.exists(save_dir):
         os.mkdir(save_dir)

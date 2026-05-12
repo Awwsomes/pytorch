@@ -28,12 +28,19 @@ def random_take_some_files(input_path:str, output_path:str, n:int, mode:str):
 
 
 if __name__ == "__main__":
-    process_list = ["1"]
-    root_dir = r"D:\A_myData\RC26-Vision\dataset\juanZhou_cls_gazebo_real_rotate1"
-    output_root_dir = r"D:\A_myData\RC26-Vision\dataset\juanZhou_cls_mix5"
-    for process_dir in tqdm(process_list):
-        dir_path = os.path.join(root_dir, process_dir)
-        output_dir = os.path.join(output_root_dir, process_dir)
-        need_files_num = 2850-1452
+    # # 示例：分类数据集特定类别随机取指定数量样本
+    # process_list = ["1"]
+    # root_dir = r"D:\A_myData\RC26-Vision\dataset\juanZhou_obb4\images"
+    # output_root_dir = r"D:\A_myData\RC26-Vision\dataset\juanZhou_obb4\images_test"
+    # for process_dir in tqdm(process_list):
+    #     dir_path = os.path.join(root_dir, process_dir)
+    #     output_dir = os.path.join(output_root_dir, process_dir)
+    #     need_files_num = 100
+    #
+    #     random_take_some_files(dir_path, output_dir, need_files_num,"copy")
 
-        random_take_some_files(dir_path, output_dir, need_files_num,"copy")
+    # 示例：单个文件夹随机取一定数量样本
+    dir_path = r"D:\A_myData\RC26-Vision\dataset\juanZhou_obb4\images"
+    output_dir = r"D:\A_myData\RC26-Vision\dataset\juanZhou_obb4\images_test"
+    need_files_num = 100
+    random_take_some_files(dir_path, output_dir, need_files_num, "copy")

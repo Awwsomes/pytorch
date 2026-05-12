@@ -2,14 +2,14 @@ import cv2
 import os
 
 i = 0
-idx = 0
+idx = 3678
 
 origin_idx=idx
 
 ## 单纯读取文件夹下所有视频，全部保存到一个文件夹中，一直编号
-path_videos = r"D:\A_myData\RC26-Vision\dataset\z_video\corner4"
-path_output = r"D:\A_myData\RC26-Vision\dataset\corner9"
-output_img_name = "corner9_"
+path_videos = r"D:\A_myData\RC26-Vision\dataset\z_video\video2"
+path_output = r"D:\A_myData\RC26-Vision\dataset\juanZhou_obb4\images"
+output_img_name = "juanZhou_obb4_"
 video_extension = [".mp4",".avi",".mov",".wmv",".flv"]
 
 list_video = os.listdir(path_videos)

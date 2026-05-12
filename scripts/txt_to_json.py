@@ -3,10 +3,10 @@ import json
 import cv2
 from tqdm import tqdm
 
-# 仅支持正矩形
+# 支持正矩形，四边形
 def txt_to_json(txt_path:str,image_path:str, output_json_path:str, label_idx_list:list):
     """
-    将yolo标准格式的txt文件转换为labelme格式的json文件
+    将yolo检测模型标准格式，yolo26-obb格式的txt文件转换为labelme格式的json文件
 
     :param txt_path: 存放要转换的txt
     :param image_path: 对应的图像路径
@@ -14,7 +14,8 @@ def txt_to_json(txt_path:str,image_path:str, output_json_path:str, label_idx_lis
     :param label_idx_list: 类别映射列表，映射txt里的序号和对应的标签名
     :return: 无
 
-    txt文件必须是yolo标准格式：x_center y_center width height
+    txt文件支持的格式：idx x_center y_center width height
+                    idx x1 y1 x2 y2 x3 y3 x4 y4
     转换成labelme格式下的正矩形框：左上点 右下点
     """
     if not os.path.exists(txt_path):
@@ -53,12 +54,12 @@ def txt_to_json(txt_path:str,image_path:str, output_json_path:str, label_idx_lis
             # 遍历每一行（一个框）
             for idx, line in enumerate(txt_file):
                 # 拿取原数据
-                list_raw_data = []  # 格式：label_idx, x_center, y_center, width, height
+                list_raw_data = []
                 for data in line.strip().split():
                     list_raw_data.append(float(data))
 
                 # 判断是否为四边形
-                if len(list_raw_data) > 6:
+                if len(list_raw_data) > 10:
                     print(f"[Warn]: {txt} line {idx + 1} 's shape does not support, skip this line...")
                     continue
 
@@ -68,6 +69,10 @@ def txt_to_json(txt_path:str,image_path:str, output_json_path:str, label_idx_lis
                         print(f"[Info]: 以 label_idx, x_center, y_center, width, height 解析 txt")
                     elif len(list_raw_data) == 6:
                         print(f"[Info]: 以 label_idx, x_center, y_center, width, height, conf 解析 txt")
+                    elif len(list_raw_data) == 9:
+                        print(f"[Info]: 以 label_idx, x1, y1, x2, y2, x3, y3, x4, y4 解析 txt")
+                    elif len(list_raw_data) == 10:
+                        print(f"[Info]: 以 label_idx, x1, y1, x2, y2, x3, y3, x4, y4, conf 解析 txt")
 
                 # 判断是否有该标签
                 try:
@@ -76,29 +81,52 @@ def txt_to_json(txt_path:str,image_path:str, output_json_path:str, label_idx_lis
                     print(f"[Warn]: {txt} 行 {idx + 1} 的标签不在程序输入的标签映射列表中，跳过该行")
                     continue
 
-                # 转换为左上右下点,反归一化
-                point_left_up = [(list_raw_data[1] - list_raw_data[3] / 2) * img_width, (list_raw_data[2] - list_raw_data[4] / 2) * img_height]
-                point_right_down = [(list_raw_data[1] + list_raw_data[3] / 2) * img_width, (list_raw_data[2] + list_raw_data[4] / 2) * img_height]
-                points = [point_left_up, point_right_down]
+                # 正矩形
+                if len(list_raw_data) == 5 or len(list_raw_data) == 6:
+                    # 转换为左上右下点,反归一化
+                    point_left_up = [(list_raw_data[1] - list_raw_data[3] / 2) * img_width, (list_raw_data[2] - list_raw_data[4] / 2) * img_height]
+                    point_right_down = [(list_raw_data[1] + list_raw_data[3] / 2) * img_width, (list_raw_data[2] + list_raw_data[4] / 2) * img_height]
+                    points = [point_left_up, point_right_down]
 
-                # 格式化输出数据
-                if len(list_raw_data) == 5:
-                    shape:dict = {
-                        "label": label_idx,
-                        "points": points,
-                        "shape_type": "rectangle",
-                        "flags": {}
-                    }
-                else:
-                    shape:dict = {
-                        "label": label_idx,
-                        "points": points,
-                        "shape_type": "rectangle",
-                        "conf": list_raw_data[5],
-                        "flags": {}
-                    }
-                shapes.append(shape)
+                    # 格式化输出数据
+                    if len(list_raw_data) == 5:
+                        shape:dict = {
+                            "label": label_idx,
+                            "points": points,
+                            "shape_type": "rectangle",
+                            "flags": {}
+                        }
+                    else:
+                        shape:dict = {
+                            "label": label_idx,
+                            "points": points,
+                            "shape_type": "rectangle",
+                            "conf": list_raw_data[5],
+                            "flags": {}
+                        }
+                    shapes.append(shape)
 
+                elif len(list_raw_data) == 9 or len(list_raw_data) == 10:
+                    point_list = [[list_raw_data[i] * img_width, list_raw_data[i+1] * img_height] for i in range(1,9,2)]
+                    # print(point_list)
+
+                    # 格式化输出数据
+                    if len(list_raw_data) == 9:
+                        shape:dict = {
+                            "label": label_idx,
+                            "points": point_list,
+                            "shape_type": "polygon",
+                            "flags": {}
+                        }
+                    else:
+                        shape:dict = {
+                            "label": label_idx,
+                            "points": point_list,
+                            "shape_type": "polygon",
+                            "conf": list_raw_data[9],
+                            "flags": {}
+                        }
+                    shapes.append(shape)
         # print(1)
 
         # 格式化输出数据
@@ -132,8 +160,11 @@ def generate_imageData(image_path):
     return image_data
 
 if __name__ == "__main__":
-    input_txt_path = r"D:\A_myData\RC26-Vision\dataset\corner9\labels"
-    input_image_path = r"D:\A_myData\RC26-Vision\dataset\corner9\images"
-    output_json_path = r"D:\A_myData\RC26-Vision\dataset\corner9\jsons"
-    label_idx_list = ["corner", "trash"]
+    input_txt_path = r"D:\A_myData\RC26-Vision\Pytorch\yolo26\runs\obb\predict-5\labels"
+    input_image_path = r"D:\A_myData\RC26-Vision\dataset\juanZhou_obb5\images"
+    output_json_path = r"D:\A_myData\RC26-Vision\dataset\juanZhou_obb5\jsons"
+    # label_idx_list = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
+    #                               "11", "12", "13", "14", "15", "16", "17", "18", "19", "20",
+    #                               "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31"]
+    label_idx_list = ["2"]
     txt_to_json(input_txt_path,input_image_path,output_json_path,label_idx_list)

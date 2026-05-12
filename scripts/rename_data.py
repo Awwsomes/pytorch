@@ -68,9 +68,9 @@ def rename_data_one_dir(root_dir:str,output_path:str,img_root_name:str,start_idx
     print("拷贝并重命名文件完成.")
 
 if __name__ == "__main__":
-    root_path = r"D:\A_myData\RC26-Vision\dataset\A_car\2026_4_7\class_dataset"
-    output_path = r"D:\A_myData\RC26-Vision\dataset\A_car\2026_4_7\class_dataset_rename"
-    img_root_name = "juanZhou_car3_"
+    root_path = r"D:\A_myData\RC26-Vision\dataset\juanZhou_obb1"
+    output_path = r"D:\A_myData\RC26-Vision\dataset\juanZhou_obb2"
+    img_root_name = "juanZhou_obb1_"
     start_idx = 0
     ext = [".png",".jpg",".mat"]
 
@@ -78,5 +78,5 @@ if __name__ == "__main__":
         os.mkdir(output_path)
 
     # copy_dirs(root_path,output_path)
-    # rename_data_one_dir(root_path,output_path,img_root_name,start_idx,ext)
-    rename_data(root_path, output_path, img_root_name, start_idx, ext)
+    rename_data_one_dir(root_path,output_path,img_root_name,start_idx,ext)
+    # rename_data(root_path, output_path, img_root_name, start_idx, ext)

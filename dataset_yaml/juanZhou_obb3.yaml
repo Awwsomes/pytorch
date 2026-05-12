@@ -1,0 +1,8 @@
+path: D:\A_myData\RC26-Vision\dataset\juanZhou_obb3
+
+train: train\\images
+val: val\\images
+
+#classes
+names:
+  0: block
