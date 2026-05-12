@@ -1,4 +1,4 @@
-import napari
+# import napari
 import numpy as np
 import cv2
 
@@ -24,55 +24,79 @@ def write_to_txt(lidar_to_camera, reprojection_error, output_txt_path:str):
 def fast_calibration(example_img_path, img_path, world_to_lidar, points_3d, output_txt_path):
     points_2d = []  # （y,x）
 
-    print("--------------1.标定二维点---------------")
-    # 展示图片，处理鼠标点击事件
-    img = cv2.imread(img_path)
-    (img_height, img_width) = img.shape[:2]
-    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    (viewer,layer) = napari.imshow(img_rgb)
-    example_img = cv2.imread(example_img_path)
-    example_img_rgb = cv2.cvtColor(example_img, cv2.COLOR_BGR2RGB)
-    napari.imshow(example_img_rgb)
-    # viewer.events.key_press.connect(keyboard_callback)
+    # print("--------------1.标定二维点---------------")
+    # # 展示图片，处理鼠标点击事件
+    # img = cv2.imread(img_path)
+    # (img_height, img_width) = img.shape[:2]
+    # img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    # (viewer,layer) = napari.imshow(img_rgb)
+    # example_img = cv2.imread(example_img_path)
+    # example_img_rgb = cv2.cvtColor(example_img, cv2.COLOR_BGR2RGB)
+    # napari.imshow(example_img_rgb)
+    # # viewer.events.key_press.connect(keyboard_callback)
+    #
+    # # 3. 创建空的 Points 图层（关键！用于画点）
+    # points_layer = viewer.add_points(
+    #     name="标注点",
+    #     size=8,          # 点的大小
+    #     face_color="red",# 点的填充色
+    #     # 初始化空的 features 表格，用于存储序号
+    #     features={"index": []},
+    #     text={           # 显示序号的配置
+    #         "string": "{index}",  # 显示内容：序号
+    #         "size": 12,
+    #         "color": "blue",
+    #         "anchor": "upper_left" # 序号位置
+    #     },
+    #     ndim=2  # 强制 2D 图层
+    # )
+    #
+    # # 4. 【核心代码】使用 bind_key 装饰器绑定空格键
+    # @viewer.bind_key('Space')
+    # def keyboard_callback(viewer):
+    #     point = viewer.cursor.position
+    #     point = (float(point[0]), float(point[1]))
+    #
+    #     if 0 <= point[0] <= img_height and 0 <= point[1] <= img_width:
+    #         points_2d.append(point)
+    #         points_layer.add(point)
+    #
+    #         # --- 更新 features 序号
+    #         num_points = len(points_layer.data)
+    #         # 直接构建一个新的 DataFrame 赋值回去
+    #         points_layer.features = {
+    #             "index": np.arange(1, num_points + 1)
+    #         }
+    #
+    #         print(f"记录第{points_2d.index(point) + 1}个坐标: {point}")
+    #     else:
+    #         print(f"坐标越界: {point}")
+    #
+    # napari.run()
 
-    # 3. 创建空的 Points 图层（关键！用于画点）
-    points_layer = viewer.add_points(
-        name="标注点",
-        size=8,          # 点的大小
-        face_color="red",# 点的填充色
-        # 初始化空的 features 表格，用于存储序号
-        features={"index": []},
-        text={           # 显示序号的配置
-            "string": "{index}",  # 显示内容：序号
-            "size": 12,
-            "color": "blue",
-            "anchor": "upper_left" # 序号位置
-        },
-        ndim=2  # 强制 2D 图层
-    )
+    # points_2d = np.array([
+    #     [998,314],
+    #     [901,842],
+    #     [1048,1169],
+    #     [839,1198],
+    #     [773,1197],
+    #     [737,1455],
+    #     [729,972],
+    #     [763,663],
+    #     [951,245]
+    # ], dtype=np.float64)
 
-    # 4. 【核心代码】使用 bind_key 装饰器绑定空格键
-    @viewer.bind_key('Space')
-    def keyboard_callback(viewer):
-        point = viewer.cursor.position
-        point = (float(point[0]), float(point[1]))
-
-        if 0 <= point[0] <= img_height and 0 <= point[1] <= img_width:
-            points_2d.append(point)
-            points_layer.add(point)
-
-            # --- 更新 features 序号
-            num_points = len(points_layer.data)
-            # 直接构建一个新的 DataFrame 赋值回去
-            points_layer.features = {
-                "index": np.arange(1, num_points + 1)
-            }
-
-            print(f"记录第{points_2d.index(point) + 1}个坐标: {point}")
-        else:
-            print(f"坐标越界: {point}")
-
-    napari.run()
+    points_2d = np.array([
+        [998,314],
+        [901,842],
+        [1048,1169],
+        [839,1198],
+        [773,1197],
+        [737,1455],
+        [729,972],
+        [763,663],
+        [951,245]
+    ], dtype=np.float64)
 
     # 标定
     # 相机内参
@@ -93,7 +117,7 @@ def fast_calibration(example_img_path, img_path, world_to_lidar, points_3d, outp
 
     dist_coeffs = np.array([[0.0], [0.0], [0.0], [0.0], [0.0]], dtype=np.float32)
 
-    points_2d = np.stack(points_2d, axis=0)
+    # points_2d = np.stack(points_2d, axis=0)
     rvec,tvec = solve_pnp(points_3d, points_2d, camera_matrix, dist_coeffs)
     reprojection_error = compute_reprojection_error(points_3d, points_2d, rvec, tvec, camera_matrix, dist_coeffs)
 
