@@ -40,18 +40,19 @@ def preprocess_image(
 
     return input_tensor, (scale, left, top)
 
-# [1,300,4+2+num_kp*3] x y 可见度
 # TODO:一对一头模式（end2end=True）具体解释，为什么就不用NMS抑制筛选重叠框
-def postprocess(output0, scale, pad_w, pad_h,
-                img_shape, num_key_point_list, conf_thres=0.25 ) -> tuple[np.ndarray,np.ndarray,np.ndarray,list]:
+# TODO:适配没有可见度输出的模型，只有关键点的位置
+def postprocess(output0, scale, pad_w, pad_h, num_key_point_list, conf_thres=0.25 ) -> tuple[np.ndarray,np.ndarray,np.ndarray,list]:
     """
     图像后处理
     目标是 拿到原始图上 高过置信度和iou阈值 的 若干个边界框和掩膜，还有对应的类别和置信度
-    :param output0: 输入一 [1,4+num_classes+32,8400]：[batch, xywh+num_classes+mask系数(一般是32个),锚框数]
+    输出层：[1,300,4+2+max_num_kp*3] x1,y1,x2,y2,conf,label_idx,key_point1_x,key_point1_y,可见度,key_point2_x,key_point2_y,可见度...
+    识别框的格式是：左上角x,y，右下角x,y
+    由于每个类别的关键点数量不一样，输出形状中的max_num_kp*3是指以所有类别中关键点个数的最大值作为输出形状（若某类别没有这么多关键点，后面的无效的就会全部填0）
+    :param output0: 模型原始输出
     :param scale: 前处理时图片放缩系数
     :param pad_w: 前处理时宽方向上图片需填充的像素数
     :param pad_h: 前处理时高方向上图片需填充的像素数
-    :param img_shape: 原图尺寸
     :param num_key_point_list: 储存了每个类别的关键点数量，顺序按照类别映射顺序
     :param conf_thres: 置信度阈值
     :return: boxes, scores, class_ids, key_points
@@ -62,31 +63,16 @@ def postprocess(output0, scale, pad_w, pad_h,
 
     # 分离出边界框，置信度，类别，掩码
     # 每个锚框都只预测一个框和一个掩膜，并给出所有类别的置信度
-    box_pred = predictions[:, :4]
+    boxes = predictions[:, :4]
     scores = predictions[:,4] # 取出每个锚框置信度最高的那一个
     class_ids =predictions[:,5].astype(np.uint)  # 取出每个锚框置信度最高的那一个对应的类别序号
     key_points = predictions[:, 6:]  # 取出每个锚框内的掩膜
 
     # 置信度过滤
     mask = scores > conf_thres
-    box_pred, scores, class_ids, key_points = box_pred[mask], scores[mask], class_ids[mask], key_points[mask]
-    if len(box_pred) == 0:
+    boxes, scores, class_ids, key_points = boxes[mask], scores[mask], class_ids[mask], key_points[mask]
+    if len(boxes) == 0:
         return np.array([]), np.array([]), np.array([]), list()
-
-    # # 重叠框过滤，NMS极大值抑制
-    # xywh -> xyxy
-    boxes = box_pred
-    # boxes = np.zeros_like(box_pred)
-    # boxes[:, 0] = box_pred[:, 0] - box_pred[:, 2] / 2
-    # boxes[:, 1] = box_pred[:, 1] - box_pred[:, 3] / 2
-    # boxes[:, 2] = box_pred[:, 0] + box_pred[:, 2] / 2
-    # boxes[:, 3] = box_pred[:, 1] + box_pred[:, 3] / 2
-    # print(boxes)
-    # boxes[:, 0] = box_pred[:, 2] - box_pred[:, 0] / 2
-    # boxes[:, 1] = box_pred[:, 3] - box_pred[:, 1] / 2
-    # boxes[:, 2] = box_pred[:, 2] + box_pred[:, 0] / 2
-    # boxes[:, 3] = box_pred[:, 3] + box_pred[:, 1] / 2
-    # print(boxes)
 
     # # NMS
     # indices = cv2.dnn.NMSBoxes(boxes.tolist(), scores.tolist(), conf_thres, iou_thres)
@@ -123,9 +109,9 @@ def draw_results(img, boxes, key_points, class_ids):
         color = colors[class_id]
         x1, y1, x2, y2 = box
 
-        # # 防止坐标越界
-        # x1, y1 = max(0, x1), max(0, y1)
-        # x2, y2 = min(img.shape[1], x2), min(img.shape[0], y2)
+        # 防止坐标越界
+        x1, y1 = max(0, x1), max(0, y1)
+        x2, y2 = min(img.shape[1], x2), min(img.shape[0], y2)
 
         # 画矩形框
         # print(box)
@@ -156,8 +142,6 @@ def infer_single_img(img: cv2.typing.MatLike, num_key_point_list:list,
     input_layer = compiled_model.input(0)
     output_layer = compiled_model.output(0)
 
-    img_shape = img.shape[:2]
-
     # 前处理
     input_tensor, (scale, pad_left, pad_top) = preprocess_image(img, input_shape)
 
@@ -166,7 +150,7 @@ def infer_single_img(img: cv2.typing.MatLike, num_key_point_list:list,
     output = infer_request.get_tensor(output_layer).data
 
     # 后处理
-    boxes, scores, class_ids, key_points = postprocess(output, scale, pad_left, pad_top, img_shape, num_key_point_list, conf_thres)
+    boxes, scores, class_ids, key_points = postprocess(output, scale, pad_left, pad_top, num_key_point_list, conf_thres)
 
     return boxes, scores, class_ids, key_points
 
