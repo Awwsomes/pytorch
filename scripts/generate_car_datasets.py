@@ -505,6 +505,267 @@ def generate_corner_datasets(output_root_path:str, detect_model_path:str, data_y
 
     print("完成\n")
 
+def check_labels_one_count_out_of_range(folder_path, min_allowed=6, max_allowed=8, recursive=True):
+    """
+    检查指定文件夹下所有JSON文件的labels列表中1的数量是否超出指定范围
+    当1的数量 < min_allowed 或 > max_allowed 时，打印提示信息
+
+    Args:
+        folder_path (str): 要检查的根文件夹路径
+        min_allowed (int): 允许的1的最小数量，默认为0（不限制下限）
+        max_allowed (int/float): 允许的1的最大数量，默认为无穷大（不限制上限）
+        recursive (bool): 是否递归检查子文件夹，默认为True
+    """
+    print(f"检查labels中1个数是否存在异常...: {os.path.split(folder_path)[1]}")
+    # 检查输入参数合法性
+    if min_allowed < 0:
+        print(f"错误：min_allowed不能为负数，当前值: {min_allowed}")
+        return
+
+    if max_allowed < min_allowed:
+        print(f"错误：max_allowed({max_allowed})不能小于min_allowed({min_allowed})")
+        return
+
+    # 检查文件夹是否存在
+    if not os.path.isdir(folder_path):
+        print(f"错误：文件夹 '{folder_path}' 不存在或不是一个有效的目录")
+        return
+
+    # 统计信息
+    total_files = 0
+    json_files = 0
+    out_of_range_files = 0
+
+    # 构建范围描述文本
+    range_desc = ""
+    if min_allowed == 0 and max_allowed == float('inf'):
+        range_desc = "无限制（所有文件都会被打印）"
+    elif min_allowed == 0:
+        range_desc = f"1的数量 > {max_allowed}"
+    elif max_allowed == float('inf'):
+        range_desc = f"1的数量 < {min_allowed}"
+    else:
+        range_desc = f"1的数量不在 [{min_allowed}, {max_allowed}] 范围内"
+
+    print(f"开始检查文件夹: {folder_path}")
+    print(f"触发条件: {range_desc}")
+    print(f"检查模式: {'递归遍历所有子文件夹' if recursive else '仅检查当前文件夹'}")
+    print("-" * 70)
+
+    # 遍历文件夹（支持递归）
+    if recursive:
+        walker = os.walk(folder_path)
+    else:
+        walker = [(folder_path, [], os.listdir(folder_path))]
+
+    for root, dirs, files in walker:
+        for filename in files:
+            total_files += 1
+            file_path = os.path.join(root, filename)
+
+            # 只处理.json文件
+            if not filename.lower().endswith('.json'):
+                continue
+
+            json_files += 1
+
+            try:
+                # 读取并解析JSON文件
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+
+                # 检查是否存在labels键
+                if 'labels' not in data:
+                    print(f"⚠️  文件 '{file_path}' 中没有找到 'labels' 键")
+                    continue
+
+                labels = data['labels']
+
+                # 检查labels是否是列表
+                if not isinstance(labels, list):
+                    print(f"⚠️  文件 '{file_path}' 中的 'labels' 不是一个列表，类型为: {type(labels).__name__}")
+                    continue
+
+                # 检查列表是否为空
+                if len(labels) == 0:
+                    print(f"⚠️  文件 '{file_path}' 中的 'labels' 是一个空列表")
+                    continue
+
+                # 统计列表中1的数量（支持整数1和浮点数1.0）
+                one_count = sum(1 for item in labels if item == 1)
+
+                # 检查是否超出范围
+                is_out_of_range = False
+                reason = ""
+
+                if one_count < min_allowed:
+                    is_out_of_range = True
+                    reason = f"低于允许的最小值 {min_allowed}"
+                elif one_count > max_allowed:
+                    is_out_of_range = True
+                    reason = f"高于允许的最大值 {max_allowed}"
+
+                if is_out_of_range:
+                    out_of_range_files += 1
+                    print(f"❌ 文件 '{file_path}'")
+                    print(f"   labels总长度: {len(labels)}, 1的数量: {one_count}")
+                    print(f"   原因: {reason}")
+                    print()
+
+            except json.JSONDecodeError:
+                print(f"❌ 文件 '{file_path}' 不是有效的JSON格式，解析失败")
+            except PermissionError:
+                print(f"❌ 没有权限读取文件 '{file_path}'")
+            except Exception as e:
+                print(f"❌ 处理文件 '{file_path}' 时发生未知错误: {str(e)}")
+
+    # 打印最终汇总信息
+    print("=" * 70)
+    print("检查完成！汇总信息:")
+    print(f"总文件数: {total_files}")
+    print(f"JSON文件数: {json_files}")
+    print(f"超出范围的文件数: {out_of_range_files}")
+    print(f"允许的范围: [{min_allowed}, {'∞' if max_allowed == float('inf') else max_allowed}]")
+    print("=" * 70)
+
+def check_subfolders_for_near_black_images(
+        root_folder,
+        min_near_black_images=2,
+        black_threshold=0.1,
+        delete_problematic=False
+):
+    """
+    检查根文件夹下所有直接子文件夹中的图片，统计接近全黑图片的数量
+    接近全黑定义：非0像素占总像素的比例 < black_threshold
+    当子文件夹中接近全黑图片数量≥min_near_black_images时，可选择自动删除该子文件夹
+
+    Args:
+        root_folder (str): 根文件夹路径
+        min_near_black_images (int): 触发提示/删除的最小接近全黑图片数量，默认为2
+        black_threshold (float): 接近全黑的阈值，非0像素占比小于此值即判定为接近全黑，默认为0.1（10%）
+        delete_problematic (bool): 是否自动删除有问题的子文件夹，默认为False（安全模式）
+    """
+    print(f"检查roi图像全黑个数...: {os.path.split(root_folder)[1]}")
+    # 检查输入参数合法性
+    if not (0 < black_threshold < 1):
+        print(f"错误：black_threshold必须在(0, 1)范围内，当前值: {black_threshold}")
+        return
+
+    if min_near_black_images < 1:
+        print(f"错误：min_near_black_images必须大于等于1，当前值: {min_near_black_images}")
+        return
+
+    # 检查根文件夹是否存在
+    if not os.path.isdir(root_folder):
+        print(f"错误：根文件夹 '{root_folder}' 不存在或不是有效的目录")
+        return
+
+    # 支持的图片格式
+    image_extensions = ('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tiff', '.webp')
+
+    # 统计信息
+    total_subfolders = 0
+    problematic_subfolders = []
+    deleted_subfolders = []
+    total_images_checked = 0
+    total_near_black_images = 0
+
+    print(f"开始检查文件夹: {root_folder}")
+    print(f"接近全黑定义: 非0像素占比 < {black_threshold * 100}%")
+    print(f"触发条件: 子文件夹内接近全黑图片数量 ≥ {min_near_black_images}")
+    if delete_problematic:
+        print("⚠️  警告：删除模式已开启，符合条件的子文件夹将被永久删除！")
+    print("-" * 70)
+
+    # 获取所有直接子文件夹
+    subfolders = []
+    for entry in os.listdir(root_folder):
+        entry_path = os.path.join(root_folder, entry)
+        if os.path.isdir(entry_path):
+            subfolders.append(entry_path)
+
+    if not subfolders:
+        print("警告：根文件夹下没有找到任何子文件夹")
+        return
+
+    # 遍历每个子文件夹
+    for subfolder in subfolders:
+        total_subfolders += 1
+        near_black_count = 0
+        image_count = 0
+
+        # 遍历子文件夹中的所有文件
+        for filename in os.listdir(subfolder):
+            file_path = os.path.join(subfolder, filename)
+
+            # 只处理图片文件
+            if not filename.lower().endswith(image_extensions):
+                continue
+
+            image_count += 1
+            total_images_checked += 1
+
+            try:
+                # 打开图片并转换为灰度图
+                with cv2.imread(file_path) as img:
+                    gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                    # 转换为numpy数组进行高效计算
+                    gray_array = np.array(gray_img)
+
+                    # 计算总像素数和非0像素数
+                    total_pixels = gray_array.size
+                    non_zero_pixels = np.count_nonzero(gray_array)
+                    non_zero_ratio = non_zero_pixels / total_pixels
+
+                    # 判断是否为接近全黑图片
+                    if non_zero_ratio < black_threshold:
+                        near_black_count += 1
+                        total_near_black_images += 1
+                        # 可选：打印每个接近全黑图片的详细信息
+                        # print(f"📸 接近全黑图片: {file_path}")
+                        # print(f"   非0像素占比: {non_zero_ratio:.4f} ({non_zero_pixels}/{total_pixels})")
+
+            except Exception as e:
+                print(f"⚠️  无法处理图片 '{file_path}': {str(e)}")
+                continue
+
+        # 检查是否达到触发条件
+        if near_black_count >= min_near_black_images:
+            problematic_subfolders.append(subfolder)
+            print(f"❌ 问题文件夹: {subfolder}")
+            print(f"   图片总数: {image_count}, 接近全黑图片数: {near_black_count}")
+
+            # 如果开启了删除模式，则删除该子文件夹
+            if delete_problematic:
+                try:
+                    shutil.rmtree(subfolder)
+                    deleted_subfolders.append(subfolder)
+                    print(f"   ✅ 已成功删除该文件夹")
+                except Exception as e:
+                    print(f"   ❌ 删除失败: {str(e)}")
+
+            print()
+
+    # 打印最终汇总信息
+    print("=" * 70)
+    print("检查完成！汇总信息:")
+    print(f"总子文件夹数: {total_subfolders}")
+    print(f"有问题的子文件夹数: {len(problematic_subfolders)}")
+    if delete_problematic:
+        print(f"已成功删除的子文件夹数: {len(deleted_subfolders)}")
+    print(f"总共检查图片数: {total_images_checked}")
+    print(f"总共发现接近全黑图片数: {total_near_black_images}")
+    print(f"使用的接近全黑阈值: {black_threshold * 100}%")
+
+    if problematic_subfolders:
+        print("\n有问题的子文件夹列表:")
+        for i, folder in enumerate(problematic_subfolders, 1):
+            status = "已删除" if folder in deleted_subfolders else "保留"
+            print(f"  {i}. {folder} [{status}]")
+    else:
+        print(f"\n✅ 所有子文件夹都符合要求，没有发现接近全黑图片数量≥{min_near_black_images}的情况")
+    print("=" * 70)
+
 if __name__ == "__main__":
     # 判断输入参数合法性
     model_test = YOLO(config.class_config.model_path)
@@ -527,6 +788,7 @@ if __name__ == "__main__":
     # 生成总数据集
     if config.settings.generate_global_data:
         generate_global_dataset(config.path.raw_data_root_path, config.path.output_root_path, config.settings.start_idx)
+        check_labels_one_count_out_of_range(os.path.join(config.path.output_root_path, "labels"), 6,8,False)
 
     # 生成roi数据
     if config.settings.generate_roi_data:
@@ -538,6 +800,10 @@ if __name__ == "__main__":
                                  config.path.output_root_path, config.class_config.start_idx, config.class_config.img_root_name,
                                  config.class_config.label_name_list, config.class_config.model_predict_output_dir)
 
+    # 生成分类数据集后清理roi数据
+    if config.settings.generate_roi_data:
+        check_subfolders_for_near_black_images(os.path.join(config.path.output_root_path, "roi_images"), 2, 0.1, True)
+
     # 生成角点数据集
     if config.settings.generate_corner_dataset:
         generate_corner_datasets(config.path.output_root_path, config.detect_config.model_path, config.detect_config.data_yaml,
@@ -546,3 +812,4 @@ if __name__ == "__main__":
     # 生成测试数据集
     if config.settings.generate_test_global_data:
         generate_test_global_data(config.path.raw_data_root_path, config.path.output_root_path, config.settings.test_data_start_idx)
+        check_labels_one_count_out_of_range(os.path.join(config.path.output_root_path, "test_datas"), 6,8,True)

@@ -7,9 +7,10 @@ idx = 3678
 origin_idx=idx
 
 ## 单纯读取文件夹下所有视频，全部保存到一个文件夹中，一直编号
-path_videos = r"D:\A_myData\RC26-Vision\dataset\z_video\video2"
-path_output = r"D:\A_myData\RC26-Vision\dataset\juanZhou_obb4\images"
-output_img_name = "juanZhou_obb4_"
+path_videos = r"D:\A_myData\RC26-Vision\dataset\z_video\corner5"
+path_output = r"D:\A_myData\RC26-Vision\dataset\corner11\images"
+os.makedirs(path_output, exist_ok=True)
+output_img_name = "corner11_"
 video_extension = [".mp4",".avi",".mov",".wmv",".flv"]
 
 list_video = os.listdir(path_videos)
@@ -30,7 +31,7 @@ for j,video in enumerate(list_video):
         ret, frame = cap.read()
         if not ret:
             break
-        if i % 5 == 1 and i > 30:
+        if i % 9 == 1 and i > 30:
             img_name = output_img_name + "{}.png".format(idx)
             output_path = os.path.join(path_output,img_name)
             # frame = cv2.resize(frame, (32,32))

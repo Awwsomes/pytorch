@@ -1,0 +1,8 @@
+path: D:\A_myData\RC26-Vision\dataset\corner_blue5
+
+train: train\\images
+val: val\\images
+
+names:
+  0: "corner"
+  1: "trash"
