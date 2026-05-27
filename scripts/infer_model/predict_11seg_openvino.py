@@ -42,7 +42,7 @@ def preprocess_image(
 
 def postprocess(output0, output1, scale, pad_w, pad_h,
                 img_shape,num_classes:int, conf_thres=0.25, iou_thres=0.45,
-                num_masks=32,mask_thres=0.5 ) -> tuple[np.ndarray,np.ndarray,np.ndarray,np.ndarray]:
+                num_masks=32,mask_thres=0.5 ) -> tuple[np.ndarray,np.ndarray,np.ndarray,list]:
     """
     图像后处理
     目标是 拿到原始图上 高过置信度和iou阈值 的 若干个边界框和掩膜，还有对应的类别和置信度
@@ -76,7 +76,7 @@ def postprocess(output0, output1, scale, pad_w, pad_h,
     box_pred, scores, class_ids, mask_coeffs = box_pred[mask], scores[mask], class_ids[mask], mask_coeffs[mask]
 
     if len(box_pred) == 0:
-        return np.array([]), np.array([]), np.array([]), np.array([])
+        return np.array([]), np.array([]), np.array([]), list()
 
     # 重叠框过滤，NMS极大值抑制
     # xywh -> xyxy
@@ -89,7 +89,7 @@ def postprocess(output0, output1, scale, pad_w, pad_h,
     # NMS
     indices = cv2.dnn.NMSBoxes(boxes.tolist(), scores.tolist(), conf_thres, iou_thres)  # TODO:为什么要给置信度阈值？
     if len(indices) == 0:
-        return np.array([]), np.array([]), np.array([]), np.array([])
+        return np.array([]), np.array([]), np.array([]), list()
 
     # 增加展平操作，保证索引的安全性
     indices = np.array(indices).flatten()
@@ -135,11 +135,11 @@ def postprocess(output0, output1, scale, pad_w, pad_h,
             mask_cropped[y1:y2, x1:x2] = mask_orig[y1:y2, x1:x2]
 
         # 5. 前后景筛选（阈值为0.5）
-        mask_cropped = cv2.threshold(mask_cropped, mask_thres, 255, type=np.uint8)
+        ret, mask_cropped = cv2.threshold(mask_cropped, mask_thres, 255, type=cv2.THRESH_BINARY)
 
         masks_resized.append(mask_cropped)
 
-    return boxes, scores, class_ids, np.array(masks_resized)
+    return boxes, scores, class_ids, masks_resized
 
 def draw_results(img, boxes, masks, class_ids):
     np.random.seed(42)
@@ -152,8 +152,17 @@ def draw_results(img, boxes, masks, class_ids):
         x1, y1 = max(0, x1), max(0, y1)
         x2, y2 = min(img.shape[1], x2), min(img.shape[0], y2)
 
+        mask = mask.astype(np.uint8)
+        # print(mask)
+
         # 仅利用 numpy 的布尔索引在局部区域做像素混合，大幅提升绘制性能并避免背景变暗
-        img[mask] = (img[mask] * 0.6 + np.array(color) * 0.4).astype(np.uint8)
+        # img[mask] = (img[mask] * 0.6 + np.array(color) * 0.4).astype(np.uint8)
+        contours,_ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        if contours is None:
+            print("162: error can't find contours")
+            continue
+        cv2.drawContours(img, contours, 0, color, 3)
+
 
         cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)
         cv2.putText(img, f"Class {class_id}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
@@ -164,7 +173,7 @@ def infer_single_img(img: cv2.typing.MatLike, num_classes:int,
                      infer_request: ov.InferRequest,
                      conf_thres=0.3, iou_thres=0.3,
                      num_masks=32, mask_thres=0.5,
-                     input_shape=(640,640)) -> tuple[np.ndarray,np.ndarray,np.ndarray,np.ndarray]:
+                     input_shape=(640,640)) -> tuple[np.ndarray,np.ndarray,np.ndarray,list]:
     """
     单张图片推理
     :param img: 输入图片
@@ -230,7 +239,7 @@ def infer_video(source, num_classes:int, compiled_model: ov.CompiledModel, infer
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model",
-                        default=r"D:\A_myData\RC26-Vision\Pytorch\yolo11\runs\segment\train\weights\best_openvino_model\best.xml",
+                        default=r"D:\A_myData\RC26-Vision\Pytorch\yolo11\runs\segment\卷轴分割0_测试\weights\best_openvino_model\best.xml",
                         help="OpenVINO model (.xml/.onnx)")
     parser.add_argument("--source", default='1', help="source: camera id (0,1...), video or img path")
     parser.add_argument("--output", default="", help="Output image path (only for image input)")
