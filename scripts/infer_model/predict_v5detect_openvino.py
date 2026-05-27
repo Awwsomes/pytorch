@@ -4,11 +4,8 @@ import openvino.runtime as ov
 import time
 from pathlib import Path
 
-# 数据集类别标签
-CLASSES = ["corner"]
-
 class YOLOv5OpenVINO:
-    def __init__(self, model_path, device="CPU", conf_thres=0.3, iou_thres=0.3):
+    def __init__(self, model_path:str, classes:list, device:str="CPU", conf_thres:float=0.3, iou_thres:float=0.3):
         """
         初始化YOLOv5 OpenVINO推理器
 
@@ -20,6 +17,7 @@ class YOLOv5OpenVINO:
         """
         self.conf_thres = conf_thres
         self.iou_thres = iou_thres
+        self.classes = classes
 
         # 初始化OpenVINO核心
         self.core = ov.Core()
@@ -181,7 +179,7 @@ class YOLOv5OpenVINO:
             cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
 
             # 绘制标签和置信度
-            label = f"{CLASSES[class_id]}: {score:.2f}"
+            label = f"{self.classes[class_id]}: {score:.2f}"
             label_size, _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
             label_y = y1 - 10 if y1 - 10 > 10 else y1 + 10
 
@@ -349,41 +347,42 @@ class YOLOv5OpenVINO:
 # 使用示例
 if __name__ == "__main__":
     # 模型路径（替换为你的OpenVINO模型路径）
-    MODEL_PATH = r"D:\A_myData\RC26-Vision\Pytorch\yolov5-master\runs\train\角点检测5\weights\best_openvino_model\best.xml"
+    MODEL_PATH = r"D:\A_myData\RC26-Vision\Pytorch\yolov5-master\runs\train\卷轴检测_han2\weights\卷轴检测_han2\best.xml"
 
     # 初始化推理器
     detector = YOLOv5OpenVINO(
         model_path=MODEL_PATH,
+        classes=["blue"],
         device="CPU",  # 可以改为 "GPU", "AUTO", "MULTI:CPU,GPU" 等
-        conf_thres=0.3,
+        conf_thres=0.8,
         iou_thres=0.3
     )
 
-    # 1. 推理单张图片
-    print("\n=== 单张图片推理 ===")
-    try:
-        detector.infer_image(
-            image_path=r"C:\Users\tianc\Desktop\img5.jpg",  # 替换为你的图片路径
-            save_path="",
-            show=True
-        )
-    except FileNotFoundError as e:
-        print(f"图片推理跳过: {e}")
-
-    # # 2. 推理视频流
-    # print("\n=== 视频流推理 ===")
+    # # 1. 推理单张图片
+    # print("\n=== 单张图片推理 ===")
     # try:
-    #     # 推理本地视频文件
-    #     # detector.infer_video(
-    #     #     video_source="test.mp4",  # 替换为你的视频路径
-    #     #     save_path="result.mp4",
-    #     #     show=True
-    #     # )
-    #
-    #     # 推理摄像头（按q退出）
-    #     detector.infer_video(
-    #         video_source=0,  # 摄像头ID
+    #     detector.infer_image(
+    #         image_path=r"C:\Users\tianc\Desktop\img5.jpg",  # 替换为你的图片路径
+    #         save_path="",
     #         show=True
     #     )
-    # except Exception as e:
-    #     print(f"视频推理错误: {e}")
+    # except FileNotFoundError as e:
+    #     print(f"图片推理跳过: {e}")
+
+    # 2. 推理视频流
+    print("\n=== 视频流推理 ===")
+    try:
+        # 推理本地视频文件
+        # detector.infer_video(
+        #     video_source="test.mp4",  # 替换为你的视频路径
+        #     save_path="result.mp4",
+        #     show=True
+        # )
+
+        # 推理摄像头（按q退出）
+        detector.infer_video(
+            video_source=1,  # 摄像头ID
+            show=True
+        )
+    except Exception as e:
+        print(f"视频推理错误: {e}")
