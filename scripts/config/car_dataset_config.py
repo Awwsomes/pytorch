@@ -7,11 +7,11 @@ class Settings:
     def __init__(self):
         self.start_idx = 832
         self.test_data_start_idx = 31
-        self.generate_global_data = True
-        self.generate_roi_data = True
-        self.generate_class_dataset = True
+        self.generate_global_data = False
+        self.generate_roi_data = False
+        self.generate_class_dataset = False
         self.generate_corner_dataset = True
-        self.generate_test_global_data = True
+        self.generate_test_global_data = False
 
 class ClassConfig:
     def __init__(self):

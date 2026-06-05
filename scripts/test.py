@@ -627,168 +627,168 @@
     # 示例4：不递归检查
     # check_labels_one_count_out_of_range(target_folder, min_allowed=2, max_allowed=5, recursive=False)
 
-import os
-import shutil
-import numpy as np
-from PIL import Image
-
-
-def check_subfolders_for_near_black_images(
-        root_folder,
-        min_near_black_images=2,
-        black_threshold=0.1,
-        delete_problematic=False
-):
-    """
-    检查根文件夹下所有直接子文件夹中的图片，统计接近全黑图片的数量
-    接近全黑定义：非0像素占总像素的比例 < black_threshold
-    当子文件夹中接近全黑图片数量≥min_near_black_images时，可选择自动删除该子文件夹
-
-    Args:
-        root_folder (str): 根文件夹路径
-        min_near_black_images (int): 触发提示/删除的最小接近全黑图片数量，默认为2
-        black_threshold (float): 接近全黑的阈值，非0像素占比小于此值即判定为接近全黑，默认为0.1（10%）
-        delete_problematic (bool): 是否自动删除有问题的子文件夹，默认为False（安全模式）
-    """
-    # 检查输入参数合法性
-    if not (0 < black_threshold < 1):
-        print(f"错误：black_threshold必须在(0, 1)范围内，当前值: {black_threshold}")
-        return
-
-    if min_near_black_images < 1:
-        print(f"错误：min_near_black_images必须大于等于1，当前值: {min_near_black_images}")
-        return
-
-    # 检查根文件夹是否存在
-    if not os.path.isdir(root_folder):
-        print(f"错误：根文件夹 '{root_folder}' 不存在或不是有效的目录")
-        return
-
-    # 支持的图片格式
-    image_extensions = ('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tiff', '.webp')
-
-    # 统计信息
-    total_subfolders = 0
-    problematic_subfolders = []
-    deleted_subfolders = []
-    total_images_checked = 0
-    total_near_black_images = 0
-
-    print(f"开始检查文件夹: {root_folder}")
-    print(f"接近全黑定义: 非0像素占比 < {black_threshold * 100}%")
-    print(f"触发条件: 子文件夹内接近全黑图片数量 ≥ {min_near_black_images}")
-    if delete_problematic:
-        print("⚠️  警告：删除模式已开启，符合条件的子文件夹将被永久删除！")
-    print("-" * 70)
-
-    # 获取所有直接子文件夹
-    subfolders = []
-    for entry in os.listdir(root_folder):
-        entry_path = os.path.join(root_folder, entry)
-        if os.path.isdir(entry_path):
-            subfolders.append(entry_path)
-
-    if not subfolders:
-        print("警告：根文件夹下没有找到任何子文件夹")
-        return
-
-    # 遍历每个子文件夹
-    for subfolder in subfolders:
-        total_subfolders += 1
-        near_black_count = 0
-        image_count = 0
-
-        # 遍历子文件夹中的所有文件
-        for filename in os.listdir(subfolder):
-            file_path = os.path.join(subfolder, filename)
-
-            # 只处理图片文件
-            if not filename.lower().endswith(image_extensions):
-                continue
-
-            image_count += 1
-            total_images_checked += 1
-
-            try:
-                # 打开图片并转换为灰度图
-                with Image.open(file_path) as img:
-                    gray_img = img.convert('L')
-                    # 转换为numpy数组进行高效计算
-                    gray_array = np.array(gray_img)
-
-                    # 计算总像素数和非0像素数
-                    total_pixels = gray_array.size
-                    non_zero_pixels = np.count_nonzero(gray_array)
-                    non_zero_ratio = non_zero_pixels / total_pixels
-
-                    # 判断是否为接近全黑图片
-                    if non_zero_ratio < black_threshold:
-                        near_black_count += 1
-                        total_near_black_images += 1
-                        # 可选：打印每个接近全黑图片的详细信息
-                        # print(f"📸 接近全黑图片: {file_path}")
-                        # print(f"   非0像素占比: {non_zero_ratio:.4f} ({non_zero_pixels}/{total_pixels})")
-
-            except Exception as e:
-                print(f"⚠️  无法处理图片 '{file_path}': {str(e)}")
-                continue
-
-        # 检查是否达到触发条件
-        if near_black_count >= min_near_black_images:
-            problematic_subfolders.append(subfolder)
-            print(f"❌ 问题文件夹: {subfolder}")
-            print(f"   图片总数: {image_count}, 接近全黑图片数: {near_black_count}")
-
-            # 如果开启了删除模式，则删除该子文件夹
-            if delete_problematic:
-                try:
-                    shutil.rmtree(subfolder)
-                    deleted_subfolders.append(subfolder)
-                    print(f"   ✅ 已成功删除该文件夹")
-                except Exception as e:
-                    print(f"   ❌ 删除失败: {str(e)}")
-
-            print()
-
-    # 打印最终汇总信息
-    print("=" * 70)
-    print("检查完成！汇总信息:")
-    print(f"总子文件夹数: {total_subfolders}")
-    print(f"有问题的子文件夹数: {len(problematic_subfolders)}")
-    if delete_problematic:
-        print(f"已成功删除的子文件夹数: {len(deleted_subfolders)}")
-    print(f"总共检查图片数: {total_images_checked}")
-    print(f"总共发现接近全黑图片数: {total_near_black_images}")
-    print(f"使用的接近全黑阈值: {black_threshold * 100}%")
-
-    if problematic_subfolders:
-        print("\n有问题的子文件夹列表:")
-        for i, folder in enumerate(problematic_subfolders, 1):
-            status = "已删除" if folder in deleted_subfolders else "保留"
-            print(f"  {i}. {folder} [{status}]")
-    else:
-        print(f"\n✅ 所有子文件夹都符合要求，没有发现接近全黑图片数量≥{min_near_black_images}的情况")
-    print("=" * 70)
-
-
-# 使用示例
-if __name__ == "__main__":
-    # 替换为你的根文件夹路径
-    target_root_folder = "/home/awwsome/datasets/car_blue/roi_images"
-
-    # # 1. 安全模式（默认）：只检查不删除，使用默认阈值10%
-    # print("=== 安全模式：只检查不删除 ===")
-    # check_subfolders_for_near_black_images(target_root_folder)
-
-    # 2. 删除模式：检查并删除有问题的子文件夹
-    # 注意：请先在安全模式下确认结果无误后再使用删除模式！
-    print("\n=== 删除模式：检查并删除有问题的子文件夹 ===")
-    check_subfolders_for_near_black_images(
-        target_root_folder,
-        min_near_black_images=2,
-        black_threshold=0.1,
-        delete_problematic=True
-    )
+# import os
+# import shutil
+# import numpy as np
+# from PIL import Image
+#
+#
+# def check_subfolders_for_near_black_images(
+#         root_folder,
+#         min_near_black_images=2,
+#         black_threshold=0.1,
+#         delete_problematic=False
+# ):
+#     """
+#     检查根文件夹下所有直接子文件夹中的图片，统计接近全黑图片的数量
+#     接近全黑定义：非0像素占总像素的比例 < black_threshold
+#     当子文件夹中接近全黑图片数量≥min_near_black_images时，可选择自动删除该子文件夹
+#
+#     Args:
+#         root_folder (str): 根文件夹路径
+#         min_near_black_images (int): 触发提示/删除的最小接近全黑图片数量，默认为2
+#         black_threshold (float): 接近全黑的阈值，非0像素占比小于此值即判定为接近全黑，默认为0.1（10%）
+#         delete_problematic (bool): 是否自动删除有问题的子文件夹，默认为False（安全模式）
+#     """
+#     # 检查输入参数合法性
+#     if not (0 < black_threshold < 1):
+#         print(f"错误：black_threshold必须在(0, 1)范围内，当前值: {black_threshold}")
+#         return
+#
+#     if min_near_black_images < 1:
+#         print(f"错误：min_near_black_images必须大于等于1，当前值: {min_near_black_images}")
+#         return
+#
+#     # 检查根文件夹是否存在
+#     if not os.path.isdir(root_folder):
+#         print(f"错误：根文件夹 '{root_folder}' 不存在或不是有效的目录")
+#         return
+#
+#     # 支持的图片格式
+#     image_extensions = ('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tiff', '.webp')
+#
+#     # 统计信息
+#     total_subfolders = 0
+#     problematic_subfolders = []
+#     deleted_subfolders = []
+#     total_images_checked = 0
+#     total_near_black_images = 0
+#
+#     print(f"开始检查文件夹: {root_folder}")
+#     print(f"接近全黑定义: 非0像素占比 < {black_threshold * 100}%")
+#     print(f"触发条件: 子文件夹内接近全黑图片数量 ≥ {min_near_black_images}")
+#     if delete_problematic:
+#         print("⚠️  警告：删除模式已开启，符合条件的子文件夹将被永久删除！")
+#     print("-" * 70)
+#
+#     # 获取所有直接子文件夹
+#     subfolders = []
+#     for entry in os.listdir(root_folder):
+#         entry_path = os.path.join(root_folder, entry)
+#         if os.path.isdir(entry_path):
+#             subfolders.append(entry_path)
+#
+#     if not subfolders:
+#         print("警告：根文件夹下没有找到任何子文件夹")
+#         return
+#
+#     # 遍历每个子文件夹
+#     for subfolder in subfolders:
+#         total_subfolders += 1
+#         near_black_count = 0
+#         image_count = 0
+#
+#         # 遍历子文件夹中的所有文件
+#         for filename in os.listdir(subfolder):
+#             file_path = os.path.join(subfolder, filename)
+#
+#             # 只处理图片文件
+#             if not filename.lower().endswith(image_extensions):
+#                 continue
+#
+#             image_count += 1
+#             total_images_checked += 1
+#
+#             try:
+#                 # 打开图片并转换为灰度图
+#                 with Image.open(file_path) as img:
+#                     gray_img = img.convert('L')
+#                     # 转换为numpy数组进行高效计算
+#                     gray_array = np.array(gray_img)
+#
+#                     # 计算总像素数和非0像素数
+#                     total_pixels = gray_array.size
+#                     non_zero_pixels = np.count_nonzero(gray_array)
+#                     non_zero_ratio = non_zero_pixels / total_pixels
+#
+#                     # 判断是否为接近全黑图片
+#                     if non_zero_ratio < black_threshold:
+#                         near_black_count += 1
+#                         total_near_black_images += 1
+#                         # 可选：打印每个接近全黑图片的详细信息
+#                         # print(f"📸 接近全黑图片: {file_path}")
+#                         # print(f"   非0像素占比: {non_zero_ratio:.4f} ({non_zero_pixels}/{total_pixels})")
+#
+#             except Exception as e:
+#                 print(f"⚠️  无法处理图片 '{file_path}': {str(e)}")
+#                 continue
+#
+#         # 检查是否达到触发条件
+#         if near_black_count >= min_near_black_images:
+#             problematic_subfolders.append(subfolder)
+#             print(f"❌ 问题文件夹: {subfolder}")
+#             print(f"   图片总数: {image_count}, 接近全黑图片数: {near_black_count}")
+#
+#             # 如果开启了删除模式，则删除该子文件夹
+#             if delete_problematic:
+#                 try:
+#                     shutil.rmtree(subfolder)
+#                     deleted_subfolders.append(subfolder)
+#                     print(f"   ✅ 已成功删除该文件夹")
+#                 except Exception as e:
+#                     print(f"   ❌ 删除失败: {str(e)}")
+#
+#             print()
+#
+#     # 打印最终汇总信息
+#     print("=" * 70)
+#     print("检查完成！汇总信息:")
+#     print(f"总子文件夹数: {total_subfolders}")
+#     print(f"有问题的子文件夹数: {len(problematic_subfolders)}")
+#     if delete_problematic:
+#         print(f"已成功删除的子文件夹数: {len(deleted_subfolders)}")
+#     print(f"总共检查图片数: {total_images_checked}")
+#     print(f"总共发现接近全黑图片数: {total_near_black_images}")
+#     print(f"使用的接近全黑阈值: {black_threshold * 100}%")
+#
+#     if problematic_subfolders:
+#         print("\n有问题的子文件夹列表:")
+#         for i, folder in enumerate(problematic_subfolders, 1):
+#             status = "已删除" if folder in deleted_subfolders else "保留"
+#             print(f"  {i}. {folder} [{status}]")
+#     else:
+#         print(f"\n✅ 所有子文件夹都符合要求，没有发现接近全黑图片数量≥{min_near_black_images}的情况")
+#     print("=" * 70)
+#
+#
+# # 使用示例
+# if __name__ == "__main__":
+#     # 替换为你的根文件夹路径
+#     target_root_folder = "/home/awwsome/datasets/car_blue/roi_images"
+#
+#     # # 1. 安全模式（默认）：只检查不删除，使用默认阈值10%
+#     # print("=== 安全模式：只检查不删除 ===")
+#     # check_subfolders_for_near_black_images(target_root_folder)
+#
+#     # 2. 删除模式：检查并删除有问题的子文件夹
+#     # 注意：请先在安全模式下确认结果无误后再使用删除模式！
+#     print("\n=== 删除模式：检查并删除有问题的子文件夹 ===")
+#     check_subfolders_for_near_black_images(
+#         target_root_folder,
+#         min_near_black_images=2,
+#         black_threshold=0.1,
+#         delete_problematic=True
+#     )
 
     # 3. 自定义阈值：非0像素占比<5%才判定为接近全黑
     # check_subfolders_for_near_black_images(
@@ -797,3 +797,31 @@ if __name__ == "__main__":
     #     black_threshold=0.05,
     #     delete_problematic=False
     # )
+
+
+from txt_to_json import txt_to_json
+import os
+from generate_car_datasets import yolov5_detect_parse_opt
+import sys
+sys.path.append(r"D:\A_myData\RC26-Vision\Pytorch\yolov5-master")
+import detect as yolov5_detect
+
+output_root_path = r"D:\A_myData\RC26-Vision\dataset\wuQiTou5"
+detect_model_path = r"D:\A_myData\RC26-Vision\Pytorch\yolov5-master\runs\train\武器头检测1\weights\best.pt"
+data_yaml = r"D:\A_myData\RC26-Vision\Pytorch\pytorch\dataset_yaml\wuQiTou4.yaml"
+
+# 创建json
+jsons_path = os.path.join(output_root_path, "corner_jsons")
+os.makedirs(jsons_path, exist_ok=True)
+images_path = os.path.join(output_root_path, "images")
+
+# 调用detct预测
+print("v5模型预测图片...\n")
+opt = yolov5_detect_parse_opt(detect_model_path, images_path, data_yaml, 0.3, 0.3, 7)
+save_path = yolov5_detect.main(opt)
+# print(save_path)
+
+# 将txt转为json
+print("txt转换为labelme_json...\n")
+txts_path = os.path.join(save_path, "labels")
+txt_to_json(txts_path, images_path, jsons_path, ["weapon"])
