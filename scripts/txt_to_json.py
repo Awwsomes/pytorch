@@ -4,7 +4,7 @@ import cv2
 from tqdm import tqdm
 
 # 支持正矩形，四边形
-def txt_to_json(txt_path:str,image_path:str, output_json_path:str, label_idx_list:list):
+def txt_to_json(txt_path:str,image_path:str, output_json_path:str, label_idx_list:list, generate_image_data:bool=False):
     """
     将yolo检测模型标准格式，yolo26-obb格式的txt文件转换为labelme格式的json文件
 
@@ -12,6 +12,7 @@ def txt_to_json(txt_path:str,image_path:str, output_json_path:str, label_idx_lis
     :param image_path: 对应的图像路径
     :param output_json_path: 输出json路径
     :param label_idx_list: 类别映射列表，映射txt里的序号和对应的标签名
+    :param generate_image_data: True为生成的json文件含图像数据，False为不带，默认为False
     :return: 无
 
     txt文件支持的格式：idx x_center y_center width height
@@ -130,15 +131,26 @@ def txt_to_json(txt_path:str,image_path:str, output_json_path:str, label_idx_lis
         # print(1)
 
         # 格式化输出数据
-        json_data = {
-            "version": "5.1.1",
-            "flags": {},
-            "shapes": shapes,
-            "imagePath": f"{path_image}",
-            "imageData": generate_imageData(path_image),
-            "imageHeight": img_height,
-            "imageWidth": img_width
-        }
+        if generate_image_data:
+            json_data = {
+                "version": "5.1.1",
+                "flags": {},
+                "shapes": shapes,
+                "imagePath": f"{path_image}",
+                "imageData": generate_imageData(path_image),
+                "imageHeight": img_height,
+                "imageWidth": img_width
+            }
+        else:
+            json_data = {
+                "version": "5.1.1",
+                "flags": {},
+                "shapes": shapes,
+                "imagePath": f"{path_image}",
+                "imageData": None,
+                "imageHeight": img_height,
+                "imageWidth": img_width
+            }
 
         # 写入
         with open(path_json,'w',encoding="utf-8") as json_file:
