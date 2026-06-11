@@ -172,11 +172,11 @@ def generate_imageData(image_path):
     return image_data
 
 if __name__ == "__main__":
-    input_txt_path = r"D:\A_myData\RC26-Vision\Pytorch\yolo26\runs\obb\predict-5\labels"
-    input_image_path = r"D:\A_myData\RC26-Vision\dataset\juanZhou_obb5\images"
-    output_json_path = r"D:\A_myData\RC26-Vision\dataset\juanZhou_obb5\jsons"
+    input_txt_path = r"D:\A_myData\RC26-Vision\Pytorch\yolov5-master\runs\detect\exp51\labels"
+    input_image_path = r"D:\A_myData\RC26-Vision\dataset\juanZhou_det_blue2\images"
+    output_json_path = r"D:\A_myData\RC26-Vision\dataset\juanZhou_det_blue2\jsons"
     # label_idx_list = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
     #                               "11", "12", "13", "14", "15", "16", "17", "18", "19", "20",
     #                               "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31"]
-    label_idx_list = ["2"]
+    label_idx_list = ["blue"]
     txt_to_json(input_txt_path,input_image_path,output_json_path,label_idx_list)
