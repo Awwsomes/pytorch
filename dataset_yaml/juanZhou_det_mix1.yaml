@@ -1,0 +1,13 @@
+path: D:\A_myData\RC26-Vision\dataset\juanZhou_det_mix1_split
+
+train: train\\images
+val: val\\images
+
+#classes
+names:
+  0: r1_red
+  1: r2_red
+  2: fake_red
+  3: r1_blue
+  4: r2_blue
+  5: fake_blue

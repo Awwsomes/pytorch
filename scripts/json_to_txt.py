@@ -121,9 +121,9 @@ def convert_label(json_dir, save_dir, classes: list):
 
 
 if __name__ == "__main__":
-    json_dir = r"D:\A_myData\RC26-Vision\dataset\wuQiTou5\corner_jsons"
-    save_dir = r"D:\A_myData\RC26-Vision\dataset\wuQiTou5\labels"
-    classes = ["weapon"]
+    json_dir = r"D:\A_myData\RC26-Vision\dataset\juanZhou_det_mix2\jsons"
+    save_dir = r"D:\A_myData\RC26-Vision\dataset\juanZhou_det_mix2\labels"
+    classes = ["r1_red","r2_red","fake_red","r1_blue","r2_blue","fake_blue"]
 
     if not os.path.exists(save_dir):
         os.makedirs(save_dir, exist_ok=True)

@@ -66,10 +66,10 @@ if __name__ == "__main__":
     class_dataset_path = r"D:\A_myData\RC26-Vision\dataset\juanZhou_cls_blue_mix3"
     output_path = r"D:\A_myData\RC26-Vision\dataset\juanZhou_cls_blue_mix4"
     mapping = {
-        "blue": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
-                          "11", "12", "13", "14", "15", "16"],
-        "fake": ["17", "18", "19", "20",
-                          "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31"],
-        "trash": ["32"]
+        "r1_blue": ["1"],
+        "r2_blue": ["2", "3", "4", "5", "6", "7", "8", "9", "10",
+                                  "11", "12", "13", "14", "15", "16"],
+        "fake_blue": ["17", "18", "19", "20",
+                          "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31"]
     }
     merge_category_dataset(mapping, class_dataset_path, output_path)

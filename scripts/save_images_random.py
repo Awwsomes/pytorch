@@ -7,10 +7,10 @@ idx = 0
 origin_idx=idx
 
 ## 单纯读取文件夹下所有视频，全部保存到一个文件夹中，一直编号
-path_videos = r"D:\A_myData\RC26-Vision\dataset\z_video\video_kfs"
-path_output = r"D:\A_myData\RC26-Vision\dataset\juanZhou_det_blue2\images"
+path_videos = r"D:\A_myData\RC26-Vision\dataset\z_video\kfs3"
+path_output = r"D:\A_myData\RC26-Vision\dataset\juanZhou_det_mix1\images"
 os.makedirs(path_output, exist_ok=True)
-output_img_name = "juanZhou_det_blue2_"
+output_img_name = "juanZhou_det_mix1_"
 video_extension = [".mp4",".avi",".mov",".wmv",".flv"]
 
 list_video = os.listdir(path_videos)

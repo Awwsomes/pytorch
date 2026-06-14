@@ -199,12 +199,10 @@ def merge_classification_datasets(d1_path, d2_path, out_path, combine_label_list
 if __name__ == "__main__":
 
     # ====================== 在这里直接修改你的路径 ======================
-    dataset1_path = r"D:\A_myData\RC26-Vision\dataset\juanZhou_cls_gazebo_real"
-    dataset2_path = r"D:\A_myData\RC26-Vision\dataset\A_car\2026_4_9\juanZhou_car4"
-    output_path = r"D:\A_myData\RC26-Vision\dataset\test1"
-    combine_label_list = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
-                          "11", "12", "13", "14", "15", "16", "17", "18", "19", "20",
-                          "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31"]
+    dataset1_path = r"D:\A_myData\RC26-Vision\dataset\juanZhou_cls_blue_mix4"
+    dataset2_path = r"D:\A_myData\RC26-Vision\dataset\juanZhou_cls_mix6"
+    output_path = r"D:\A_myData\RC26-Vision\dataset\juanZhou_cls_combine2"
+    combine_label_list = ["r1_red","r2_red","fake_red","r1_blue","r2_blue","fake_blue"]
     # ====================================================================
 
     merge_classification_datasets(dataset1_path, dataset2_path, output_path, combine_label_list)

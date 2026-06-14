@@ -2,7 +2,6 @@ import os
 import json
 from typing import List, Dict, Tuple
 
-
 def replace_labelme_labels(
         input_dir: str,
         output_dir: str,

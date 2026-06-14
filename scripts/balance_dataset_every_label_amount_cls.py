@@ -1,6 +1,7 @@
 import os
 import shutil
 import random
+from tqdm import tqdm
 
 from countLabel_cls import count_label_cls
 from rename_data import copy_dirs
@@ -17,7 +18,7 @@ def balance_amount(root_path:str) -> dict[str, list]:
     min_label_amount = output_dict["min_amount"]["amount"]
     # 遍历类别
     output_list = {}
-    for label in label_amount:
+    for label in tqdm(label_amount,"处理类别中："):
         # 确定每个类别拷贝的数量
         origin_amount = label_amount[label]
         # print(f"o:{origin_amount}")
@@ -37,8 +38,8 @@ def balance_amount(root_path:str) -> dict[str, list]:
     return output_list
 
 if __name__ == "__main__":
-    root_dir = r"D:\A_myData\RC26-Vision\dataset\juanZhou_cls_combine1"
-    output_dir = r"D:\A_myData\RC26-Vision\dataset\juanZhou_cls_combine2"
+    root_dir = r"D:\A_myData\RC26-Vision\dataset\juanZhou_cls_combine2"
+    output_dir = r"D:\A_myData\RC26-Vision\dataset\juanZhou_cls_combine3"
     os.makedirs(output_dir, exist_ok=True)
 
     copy_dirs(root_dir, output_dir)
