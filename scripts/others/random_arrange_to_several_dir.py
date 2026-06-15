@@ -6,7 +6,7 @@ def arrange_images(input_path,output_root_path):
     list_dir = os.listdir(output_root_path)
     amount_dir = len(list_dir)
     if amount_dir == 0:
-
+        return
     save_dir_idx = 0
 
     extension_img = [".jpg",".png",".bmp"]

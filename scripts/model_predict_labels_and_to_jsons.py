@@ -12,7 +12,7 @@ import sys
 sys.path.append(r"D:\A_myData\RC26-Vision\Pytorch\yolov5-master")
 import detect as yolov5_detect
 from txt_to_json import txt_to_json
-from generate_car_datasets import yolov5_detect_parse_opt
+from others.generate_car_datasets import yolov5_detect_parse_opt
 from fix_json_path import batch_fix_image_path
 
 def generate_v5det_model_predict_labels(input_images_path:str, output_json_path:str, detect_model_path:str, data_yaml:str, conf_thres:float, iou_thres:float, max_det:int, labels:list):

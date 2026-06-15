@@ -3,6 +3,10 @@ import shutil
 import random
 from tqdm import tqdm
 
+import sys
+# 把上两级目录（也就是和 rename_data.py 同级的项目根目录）加入 Python 搜索路径
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from countLabel_cls import count_label_cls
 from rename_data import copy_dirs
 
@@ -38,8 +42,8 @@ def balance_amount(root_path:str) -> dict[str, list]:
     return output_list
 
 if __name__ == "__main__":
-    root_dir = r"D:\A_myData\RC26-Vision\dataset\juanZhou_cls_combine2"
-    output_dir = r"D:\A_myData\RC26-Vision\dataset\juanZhou_cls_combine3"
+    root_dir = r""
+    output_dir = r""
     os.makedirs(output_dir, exist_ok=True)
 
     copy_dirs(root_dir, output_dir)
