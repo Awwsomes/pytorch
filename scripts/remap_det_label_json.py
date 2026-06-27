@@ -1,7 +1,7 @@
 import json
 import os
 from pathlib import Path
-
+from tqdm import tqdm
 
 def remap_labelme_labels(input_dir: str, output_dir: str, label_mapping: dict) -> dict:
     """
@@ -47,7 +47,7 @@ def remap_labelme_labels(input_dir: str, output_dir: str, label_mapping: dict) -
     input_path = Path(input_dir)
     json_files = list(input_path.glob("*.json"))
 
-    for json_file in json_files:
+    for json_file in tqdm(json_files):
         # 读取原始 JSON
         with open(json_file, "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -96,12 +96,11 @@ def remap_labelme_labels(input_dir: str, output_dir: str, label_mapping: dict) -
 
 if __name__ == "__main__":
     # ========== 配置区 ==========
-    INPUT_JSON_DIR = r"D:\A_myData\RC26-Vision\dataset\juanZhou_det_blue2\jsons_3"    # 输入文件夹
-    OUTPUT_JSON_DIR = r"D:\A_myData\RC26-Vision\dataset\juanZhou_det_blue2\jsons_3_fix"  # 输出文件夹
+    INPUT_JSON_DIR = r"D:\A_myData\RC26-Vision\dataset\juanZhou_det_mix2\jsons"    # 输入文件夹
+    OUTPUT_JSON_DIR = r"D:\A_myData\RC26-Vision\dataset\juanZhou_det_mix2\jsons_2"  # 输出文件夹
     label_map = {
-        "r1_blue": ["1"],
-        "r2_blue": ["2"],
-        "fake_blue": ["3"]
+        "red": ["r1_red", "r2_red", "fake_red"],
+        "blue": ["r1_blue", "r2_blue", "fake_blue"]
     }
     # ============================
 

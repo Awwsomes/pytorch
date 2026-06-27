@@ -61,6 +61,8 @@ class YOLOv5OpenVINO:
             pad: 填充大小 (dw, dh)
         """
         # 原始图像尺寸
+        img = image.copy()
+
         h, w = image.shape[:2]
 
         # 计算缩放比例
@@ -241,6 +243,8 @@ class YOLOv5OpenVINO:
 
         # 显示结果
         if show:
+            # print("原始图像尺寸:", image.shape)  # (高, 宽, 通道)
+            # print("展示图像尺寸:", result_image.shape)
             cv2.imshow("Detection Result", result_image)
             cv2.waitKey(0)
             cv2.destroyAllWindows()
@@ -347,14 +351,14 @@ class YOLOv5OpenVINO:
 # 使用示例
 if __name__ == "__main__":
     # 模型路径（替换为你的OpenVINO模型路径）
-    MODEL_PATH = r"D:\A_myData\RC26-Vision\Pytorch\yolov5-master\runs\train\卷轴检测_han2\weights\卷轴检测_han2\best.xml"
+    MODEL_PATH = r"D:\A_myData\RC26-Vision\Pytorch\yolov5-master\runs\train\卷轴检测_混合3_只分红蓝\weights\best_openvino_model\best.xml"
 
     # 初始化推理器
     detector = YOLOv5OpenVINO(
         model_path=MODEL_PATH,
-        classes=["blue"],
+        classes=["red","blue"],
         device="CPU",  # 可以改为 "GPU", "AUTO", "MULTI:CPU,GPU" 等
-        conf_thres=0.8,
+        conf_thres=0.5,
         iou_thres=0.3
     )
 
@@ -362,8 +366,8 @@ if __name__ == "__main__":
     # print("\n=== 单张图片推理 ===")
     # try:
     #     detector.infer_image(
-    #         image_path=r"C:\Users\tianc\Desktop\img5.jpg",  # 替换为你的图片路径
-    #         save_path="",
+    #         image_path=r"D:\A_myData\RC26-Vision\Pytorch\pytorch\scripts\test_file\img_3.jpg",  # 替换为你的图片路径
+    #         save_path=r"D:\A_myData\RC26-Vision\Pytorch\pytorch\scripts\test_file\img_3_predict.jpg",
     #         show=True
     #     )
     # except FileNotFoundError as e:

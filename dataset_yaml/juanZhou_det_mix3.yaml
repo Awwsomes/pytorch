@@ -1,0 +1,9 @@
+path: F:\RC2026_OFFLINE\datasets\juanZhou_det_mix3_split
+
+train: train\\images
+val: val\\images
+
+#classes
+names:
+  0: red
+  1: blue
