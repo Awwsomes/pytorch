@@ -42,8 +42,8 @@ def balance_amount(root_path:str) -> dict[str, list]:
     return output_list
 
 if __name__ == "__main__":
-    root_dir = r""
-    output_dir = r""
+    root_dir = r"F:\RC2026_OFFLINE\datasets\juanZhou_class1"
+    output_dir = r"F:\RC2026_OFFLINE\datasets\juanZhou_class1_balance"
     os.makedirs(output_dir, exist_ok=True)
 
     copy_dirs(root_dir, output_dir)
