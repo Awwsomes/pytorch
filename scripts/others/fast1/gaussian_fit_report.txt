@@ -1,0 +1,288 @@
+================================================================================
+ODOMETRY DATA GAUSSIAN DISTRIBUTION FIT REPORT
+================================================================================
+
+Data file: /home/awwsome/odom_data/静止1_fast_raw.csv
+Analysis time: 2026-05-17 21:52:07
+Quaternion conversion: Enabled (RPY/XYZ order, radians + degrees)
+
+--------------------------------------------------------------------------------
+Column: timestamp
+--------------------------------------------------------------------------------
+Sample size: 122
+
+Descriptive Statistics:
+  Mean: 1779019909.9396226406
+  Median: 1779019909.9367101192
+  Standard deviation: 3.5251951042
+  Skewness: -0.000618 (normal = 0)
+  Excess kurtosis: -1.201065 (normal = 0)
+
+Goodness-of-Fit Tests (p-value > 0.05 means cannot reject normality):
+  Shapiro-Wilk test: statistic=0.954577, p-value=0.000421
+  Kolmogorov-Smirnov test: statistic=0.062367, p-value=0.705764
+  Chi-square test: statistic=29.760897, df=5, p-value=0.000016
+
+Overall Fit Assessment:
+  Fit level: Excellent (average p-value > 0.1)
+
+--------------------------------------------------------------------------------
+Column: position_x
+--------------------------------------------------------------------------------
+Sample size: 122
+
+Descriptive Statistics:
+  Mean: 0.0022561617
+  Median: 0.0022002230
+  Standard deviation: 0.0006344955
+  Skewness: 0.289141 (normal = 0)
+  Excess kurtosis: -0.492148 (normal = 0)
+
+Goodness-of-Fit Tests (p-value > 0.05 means cannot reject normality):
+  Shapiro-Wilk test: statistic=0.983434, p-value=0.140731
+  Kolmogorov-Smirnov test: statistic=0.061607, p-value=0.719750
+  Chi-square test: statistic=4.851181, df=4, p-value=0.302911
+
+Overall Fit Assessment:
+  Fit level: Excellent (average p-value > 0.1)
+
+--------------------------------------------------------------------------------
+Column: position_y
+--------------------------------------------------------------------------------
+Sample size: 122
+
+Descriptive Statistics:
+  Mean: -0.0038099403
+  Median: -0.0037554052
+  Standard deviation: 0.0005578538
+  Skewness: -0.210690 (normal = 0)
+  Excess kurtosis: -0.198775 (normal = 0)
+
+Goodness-of-Fit Tests (p-value > 0.05 means cannot reject normality):
+  Shapiro-Wilk test: statistic=0.989002, p-value=0.437044
+  Kolmogorov-Smirnov test: statistic=0.062591, p-value=0.701626
+  Chi-square test: statistic=6.111725, df=3, p-value=0.106299
+
+Overall Fit Assessment:
+  Fit level: Excellent (average p-value > 0.1)
+
+--------------------------------------------------------------------------------
+Column: position_z
+--------------------------------------------------------------------------------
+Sample size: 122
+
+Descriptive Statistics:
+  Mean: -0.0006636804
+  Median: -0.0006615116
+  Standard deviation: 0.0003803653
+  Skewness: -0.206405 (normal = 0)
+  Excess kurtosis: -0.132256 (normal = 0)
+
+Goodness-of-Fit Tests (p-value > 0.05 means cannot reject normality):
+  Shapiro-Wilk test: statistic=0.984994, p-value=0.196194
+  Kolmogorov-Smirnov test: statistic=0.061378, p-value=0.723939
+  Chi-square test: statistic=3.550862, df=3, p-value=0.314225
+
+Overall Fit Assessment:
+  Fit level: Excellent (average p-value > 0.1)
+
+--------------------------------------------------------------------------------
+Column: orientation_x
+--------------------------------------------------------------------------------
+Sample size: 122
+
+Descriptive Statistics:
+  Mean: -0.0003179616
+  Median: -0.0003166888
+  Standard deviation: 0.0000832150
+  Skewness: 0.148378 (normal = 0)
+  Excess kurtosis: 0.111186 (normal = 0)
+
+Goodness-of-Fit Tests (p-value > 0.05 means cannot reject normality):
+  Shapiro-Wilk test: statistic=0.995792, p-value=0.977029
+  Kolmogorov-Smirnov test: statistic=0.039233, p-value=0.988255
+  Chi-square test: statistic=1.293584, df=3, p-value=0.730657
+
+Overall Fit Assessment:
+  Fit level: Excellent (average p-value > 0.1)
+
+--------------------------------------------------------------------------------
+Column: orientation_y
+--------------------------------------------------------------------------------
+Sample size: 122
+
+Descriptive Statistics:
+  Mean: -0.0000831749
+  Median: -0.0000856191
+  Standard deviation: 0.0000700075
+  Skewness: -0.000214 (normal = 0)
+  Excess kurtosis: 0.348310 (normal = 0)
+
+Goodness-of-Fit Tests (p-value > 0.05 means cannot reject normality):
+  Shapiro-Wilk test: statistic=0.994446, p-value=0.915241
+  Kolmogorov-Smirnov test: statistic=0.051014, p-value=0.892406
+  Chi-square test: statistic=2.030834, df=3, p-value=0.566032
+
+Overall Fit Assessment:
+  Fit level: Excellent (average p-value > 0.1)
+
+--------------------------------------------------------------------------------
+Column: orientation_z
+--------------------------------------------------------------------------------
+Sample size: 122
+
+Descriptive Statistics:
+  Mean: 0.0001522266
+  Median: 0.0001511515
+  Standard deviation: 0.0000588421
+  Skewness: -0.081477 (normal = 0)
+  Excess kurtosis: 0.975222 (normal = 0)
+
+Goodness-of-Fit Tests (p-value > 0.05 means cannot reject normality):
+  Shapiro-Wilk test: statistic=0.985650, p-value=0.225121
+  Kolmogorov-Smirnov test: statistic=0.063414, p-value=0.686363
+  Chi-square test: statistic=5.055287, df=3, p-value=0.167793
+
+Overall Fit Assessment:
+  Fit level: Excellent (average p-value > 0.1)
+
+--------------------------------------------------------------------------------
+Column: orientation_w
+--------------------------------------------------------------------------------
+Sample size: 122
+
+Descriptive Statistics:
+  Mean: 0.9999999268
+  Median: 0.9999999260
+  Standard deviation: 0.0000000280
+  Skewness: -0.226933 (normal = 0)
+  Excess kurtosis: -0.066076 (normal = 0)
+
+Goodness-of-Fit Tests (p-value > 0.05 means cannot reject normality):
+  Shapiro-Wilk test: statistic=0.991881, p-value=0.699203
+  Kolmogorov-Smirnov test: statistic=0.040319, p-value=0.984266
+  Chi-square test: statistic=1.747428, df=3, p-value=0.626441
+
+Overall Fit Assessment:
+  Fit level: Excellent (average p-value > 0.1)
+
+--------------------------------------------------------------------------------
+Column: roll_rad
+--------------------------------------------------------------------------------
+Sample size: 122
+
+Descriptive Statistics:
+  Mean: -0.0006359501
+  Median: -0.0006334085
+  Standard deviation: 0.0001664297
+  Skewness: 0.148469 (normal = 0)
+  Excess kurtosis: 0.111262 (normal = 0)
+
+Goodness-of-Fit Tests (p-value > 0.05 means cannot reject normality):
+  Shapiro-Wilk test: statistic=0.995791, p-value=0.977012
+  Kolmogorov-Smirnov test: statistic=0.039206, p-value=0.988342
+  Chi-square test: statistic=1.293028, df=3, p-value=0.730789
+
+Overall Fit Assessment:
+  Fit level: Excellent (average p-value > 0.1)
+
+--------------------------------------------------------------------------------
+Column: pitch_rad
+--------------------------------------------------------------------------------
+Sample size: 122
+
+Descriptive Statistics:
+  Mean: -0.0001662541
+  Median: -0.0001711243
+  Standard deviation: 0.0001400066
+  Skewness: -0.000365 (normal = 0)
+  Excess kurtosis: 0.348493 (normal = 0)
+
+Goodness-of-Fit Tests (p-value > 0.05 means cannot reject normality):
+  Shapiro-Wilk test: statistic=0.994442, p-value=0.914981
+  Kolmogorov-Smirnov test: statistic=0.050684, p-value=0.896709
+  Chi-square test: statistic=2.034075, df=3, p-value=0.565364
+
+Overall Fit Assessment:
+  Fit level: Excellent (average p-value > 0.1)
+
+--------------------------------------------------------------------------------
+Column: yaw_rad
+--------------------------------------------------------------------------------
+Sample size: 122
+
+Descriptive Statistics:
+  Mean: 0.0003045068
+  Median: 0.0003022914
+  Standard deviation: 0.0001176909
+  Skewness: -0.081847 (normal = 0)
+  Excess kurtosis: 0.974868 (normal = 0)
+
+Goodness-of-Fit Tests (p-value > 0.05 means cannot reject normality):
+  Shapiro-Wilk test: statistic=0.985638, p-value=0.224592
+  Kolmogorov-Smirnov test: statistic=0.063486, p-value=0.685023
+  Chi-square test: statistic=5.057103, df=3, p-value=0.167663
+
+Overall Fit Assessment:
+  Fit level: Excellent (average p-value > 0.1)
+
+--------------------------------------------------------------------------------
+Column: roll_deg
+--------------------------------------------------------------------------------
+Sample size: 122
+
+Descriptive Statistics:
+  Mean: -0.0364372595
+  Median: -0.0362916339
+  Standard deviation: 0.0095357219
+  Skewness: 0.148469 (normal = 0)
+  Excess kurtosis: 0.111262 (normal = 0)
+
+Goodness-of-Fit Tests (p-value > 0.05 means cannot reject normality):
+  Shapiro-Wilk test: statistic=0.995791, p-value=0.977005
+  Kolmogorov-Smirnov test: statistic=0.039206, p-value=0.988342
+  Chi-square test: statistic=1.293028, df=3, p-value=0.730789
+
+Overall Fit Assessment:
+  Fit level: Excellent (average p-value > 0.1)
+
+--------------------------------------------------------------------------------
+Column: pitch_deg
+--------------------------------------------------------------------------------
+Sample size: 122
+
+Descriptive Statistics:
+  Mean: -0.0095256578
+  Median: -0.0098046997
+  Standard deviation: 0.0080217889
+  Skewness: -0.000365 (normal = 0)
+  Excess kurtosis: 0.348493 (normal = 0)
+
+Goodness-of-Fit Tests (p-value > 0.05 means cannot reject normality):
+  Shapiro-Wilk test: statistic=0.994442, p-value=0.914981
+  Kolmogorov-Smirnov test: statistic=0.050684, p-value=0.896709
+  Chi-square test: statistic=2.034075, df=3, p-value=0.565364
+
+Overall Fit Assessment:
+  Fit level: Excellent (average p-value > 0.1)
+
+--------------------------------------------------------------------------------
+Column: yaw_deg
+--------------------------------------------------------------------------------
+Sample size: 122
+
+Descriptive Statistics:
+  Mean: 0.0174469560
+  Median: 0.0173200226
+  Standard deviation: 0.0067431932
+  Skewness: -0.081847 (normal = 0)
+  Excess kurtosis: 0.974868 (normal = 0)
+
+Goodness-of-Fit Tests (p-value > 0.05 means cannot reject normality):
+  Shapiro-Wilk test: statistic=0.985638, p-value=0.224592
+  Kolmogorov-Smirnov test: statistic=0.063486, p-value=0.685023
+  Chi-square test: statistic=5.057103, df=3, p-value=0.167663
+
+Overall Fit Assessment:
+  Fit level: Excellent (average p-value > 0.1)
+

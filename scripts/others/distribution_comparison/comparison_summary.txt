@@ -1,0 +1,23 @@
+================================================================================
+ODOMETRY DISTRIBUTION COMPARISON SUMMARY
+================================================================================
+
+File 1: /home/awwsome/odom_data/静止1_fast_raw.csv
+File 2: /home/awwsome/odom_data/静止1 _point_raw.csv
+Analysis time: 2026-05-17 21:51:04
+
+Common columns compared: 14
+  - orientation_w
+  - orientation_x
+  - orientation_y
+  - orientation_z
+  - pitch_deg
+  - pitch_rad
+  - position_x
+  - position_y
+  - position_z
+  - roll_deg
+  - roll_rad
+  - timestamp
+  - yaw_deg
+  - yaw_rad
