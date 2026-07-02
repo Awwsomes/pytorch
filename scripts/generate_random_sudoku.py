@@ -6,15 +6,15 @@ from PIL import Image, ImageTk
 
 # ========== 配置参数 ==========
 GRID_SIZE = 3          # 3x3 九宫格
-CELL_SIZE = 160        # 每个格子像素大小
+CELL_SIZE = 400        # 每个格子像素大小
 IMG_MARGIN = 15        # 图片距离格子边框的边距
 EMPTY_COUNT = 3        # 空位数量
 BLUE_COUNT = 3         # 蓝色数量
 RED_COUNT = 3          # 红色数量
 MAX_CATEGORY = 31      # 类别 1~31
 SEQ_FILE = "./config/sudoku.txt"
-RED_FOLDER = r"D:\A_myData\WPS云盘\1785481560\WPS企业云盘\广东工业大学\我的企业文档\Robot-RC26-Vision\juanZhou\Red"
-BLUE_FOLDER = r"D:\A_myData\WPS云盘\1785481560\WPS企业云盘\广东工业大学\我的企业文档\Robot-RC26-Vision\juanZhou\Blue"
+RED_FOLDER = r"/home/awwsome/RC/juanZhou/Red"
+BLUE_FOLDER = r"/home/awwsome/RC/juanZhou/Blue"
 IMG_EXT = ".png"       # 图片后缀
 DEBUG_MODE = False     # 调试模式：True 会在每个图片位置画红框，方便确认坐标
 
