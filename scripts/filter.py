@@ -3,9 +3,9 @@ import shutil
 import json
 
 # 定义路径（根据实际路径修改）
-images_dir = r"F:\RC2026_OFFLINE\datasets\juanZhou_det_mix3\images"  # 原始图片文件夹
-json_dir = r"F:\RC2026_OFFLINE\datasets\juanZhou_det_mix3\jsons_2"  # 标签文件夹
-output_dir = r"F:\RC2026_OFFLINE\datasets\juanZhou_det_mix3\images_fix"  # 目标输出文件夹
+images_dir = r"F:\RC2026_OFFLINE\datasets\juanZhou_det_mix5\images"  # 原始图片文件夹
+json_dir = r"F:\RC2026_OFFLINE\datasets\juanZhou_det_mix5\jsons"  # 标签文件夹
+output_dir = r"F:\RC2026_OFFLINE\datasets\juanZhou_det_mix5\images_fix"  # 目标输出文件夹
 
 # 支持的图片扩展名（可根据需求添加）
 image_extensions = ('.jpg', '.jpeg', '.png', '.gif', '.bmp')

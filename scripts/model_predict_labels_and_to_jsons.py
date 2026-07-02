@@ -96,12 +96,12 @@ def yolov5_detect_parse_opt(model_path:str, imgs_path:str, data_yaml:str,conf_th
     return opt
 
 if __name__ == "__main__":
-    input_images_path = r"F:\RC2026_OFFLINE\datasets\juanZhou_det_mix3\images"
-    output_json_path = r"F:\RC2026_OFFLINE\datasets\juanZhou_det_mix3\jsons"
-    detect_model_path = r"D:\A_myData\RC26-Vision\Pytorch\yolov5-master\runs\train\卷轴检测_混合2_红蓝一起摆\weights\best.pt"
+    input_images_path = r"F:\RC2026_OFFLINE\datasets\juanZhou_det_mix5\images"
+    output_json_path = r"F:\RC2026_OFFLINE\datasets\juanZhou_det_mix5\jsons"
+    detect_model_path = r"D:\A_myData\RC26-Vision\Pytorch\yolov5-master\runs\train\卷轴检测_混合4_补充数据\weights\best.pt"
     data_yaml = r"D:\A_myData\RC26-Vision\Pytorch\pytorch\dataset_yaml\juanZhou_det_mix3.yaml"
     conf_thres = 0.3
     iou_thres = 0.3
     max_det = 50
-    labels = ["r1_red","r2_red","fake_red","r1_blue","r2_blue","fake_blue"]
+    labels = ["red","blue"]
     generate_v5det_model_predict_labels(input_images_path, output_json_path, detect_model_path, data_yaml, conf_thres, iou_thres, max_det, labels)

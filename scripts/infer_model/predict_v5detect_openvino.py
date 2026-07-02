@@ -351,7 +351,7 @@ class YOLOv5OpenVINO:
 # 使用示例
 if __name__ == "__main__":
     # 模型路径（替换为你的OpenVINO模型路径）
-    MODEL_PATH = r"D:\A_myData\RC26-Vision\Pytorch\yolov5-master\runs\train\卷轴检测_混合3_只分红蓝\weights\best_openvino_model\best.xml"
+    MODEL_PATH = r"D:\A_myData\RC26-Vision\Pytorch\yolov5-master\runs\train\卷轴检测_混合4_补充数据\weights\best_openvino_model\best.xml"
 
     # 初始化推理器
     detector = YOLOv5OpenVINO(
